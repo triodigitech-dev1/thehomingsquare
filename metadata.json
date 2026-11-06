@@ -1,0 +1,6 @@
+{
+  "name": "The Homing Square",
+  "description": "Chess for the Comeback — structure-first training, mastery demonstrated. A quiet, dignified platform for returning to the board.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

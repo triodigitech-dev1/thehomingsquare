@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --color-homing-green: #1E3A2F;
+  --color-homing-green-dark: #152921;
+  --color-homing-green-light: #2A5141;
+  --color-paper-ivory: #F6F1E7;
+  --color-paper-card: #FAF7F2;
+  --color-paper-muted: #EDE6D8;
+  --color-homing-gold: #C6A664;
+  --color-homing-gold-light: #DFCA95;
+  --color-charcoal: #262626;
+  --color-charcoal-muted: #595959;
+  --color-warm-stone: #D9CFC0;
+  --color-clay: #A8553F;
+  --color-board-light: #F0D9B5;
+  --color-board-dark: #B58863;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #F6F1E7;
+  color: #262626;
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-serif);
+}
+
+.font-mono-chess {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Subtle paper texture highlight */
+.paper-shadow {
+  box-shadow: 0 1px 3px rgba(30, 58, 47, 0.05), 0 4px 12px rgba(30, 58, 47, 0.03);
+}
+
+.paper-border {
+  border: 1px solid rgba(30, 58, 47, 0.12);
+}
