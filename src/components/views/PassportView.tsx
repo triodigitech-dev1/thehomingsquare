@@ -45,9 +45,6 @@ Verification: Homecoming Standard Demonstrable`;
               <Shield className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-xs font-mono uppercase text-[#C6A664] tracking-widest block">
-                Official Learner Record
-              </span>
               <h1 className="font-display text-2xl sm:text-3xl text-[#1E3A2F]">
                 The Passport
               </h1>
@@ -162,10 +159,6 @@ Verification: Homecoming Standard Demonstrable`;
           >
             Review in Mastery Check →
           </button>
-        </div>
-
-        <div className="text-center text-xs text-[#595959] italic pt-2">
-          “Something you could show a coach, a funder, or yourself in a year.”
         </div>
       </div>
     </div>

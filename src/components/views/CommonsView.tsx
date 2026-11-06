@@ -69,15 +69,11 @@ export const CommonsView: React.FC<CommonsViewProps> = ({ onNavigate, onSelectSt
       {/* Commons Hero Header */}
       <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono uppercase text-[#595959] tracking-wider mb-1">
-            <span>The Commons · The Community Door</span>
-          </div>
           <h1 className="font-display text-2xl sm:text-3xl text-[#1E3A2F] tracking-tight">
-            The Campfire: Organised by Structure, Not by Chapter
+            The Commons
           </h1>
-          <p className="text-xs sm:text-sm text-[#595959] mt-1 font-sans max-w-2xl leading-relaxed">
-            A conversation about the Carlsbad lives in one place forever. No social media algorithms, no rage bait.
-            Just players sharing notes on the board.
+          <p className="text-xs sm:text-sm text-[#595959] mt-1 font-sans max-w-2xl">
+            Study circles organized by pawn structure, and cohort discussion on Discord.
           </p>
         </div>
 
@@ -191,15 +187,6 @@ export const CommonsView: React.FC<CommonsViewProps> = ({ onNavigate, onSelectSt
             </div>
           </div>
 
-          {/* Welcome Greeting from Discord */}
-          <div className="p-5 bg-[#EDE6D8]/60 rounded-xl border border-[#D9CFC0] text-xs space-y-2">
-            <span className="font-mono text-[#595959] uppercase block text-[10px]">
-              The Discord Welcome Message:
-            </span>
-            <p className="font-display italic text-sm text-[#1E3A2F] leading-relaxed">
-              “Welcome to The Homing Square. You don’t have to be good. You don’t have to explain anything. Just come back to the board. Every piece has a home square.”
-            </p>
-          </div>
 
           {/* Study Partner Matchmaker Strip */}
           <div className="p-4 bg-white rounded-xl border border-[#D9CFC0] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">

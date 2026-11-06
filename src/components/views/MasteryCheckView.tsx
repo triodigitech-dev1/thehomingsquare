@@ -73,16 +73,11 @@ export const MasteryCheckView: React.FC<MasteryCheckProps> = ({
       {/* Title & Introduction */}
       <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-10 border border-[#D9CFC0]/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono uppercase text-[#C6A664] tracking-widest mb-1">
-            <span>Unit 8.2 Capstone · Homecoming</span>
-          </div>
           <h1 className="font-display text-3xl sm:text-4xl text-[#1E3A2F] tracking-tight">
-            The Mastery Check: The Unified Method End-to-End
+            The Mastery Check
           </h1>
-          <p className="text-xs sm:text-sm text-[#595959] mt-2 font-sans max-w-2xl leading-relaxed">
-            The course teaches the unified method in parts so each layer is learned cleanly.
-            This unit is the re-integration pass: it assembles what was taught and tests the assembly.
-            It teaches nothing new; it proves the student can run the whole chain.
+          <p className="text-xs sm:text-sm text-[#595959] mt-2 font-sans max-w-2xl">
+            The full method assembled: one-page map, walkthrough, five-phase rubric, and ten-game gauntlet.
           </p>
         </div>
 
@@ -111,7 +106,7 @@ export const MasteryCheckView: React.FC<MasteryCheckProps> = ({
               Section 1
             </span>
             <h2 className="font-display text-xl text-[#1E3A2F]">
-              The One-Page Map: The Full System on a Single Page
+              The One-Page Map
             </h2>
           </div>
           <span className="text-xs font-mono text-[#C6A664]">Unified Reference</span>
@@ -269,7 +264,7 @@ export const MasteryCheckView: React.FC<MasteryCheckProps> = ({
               Section 3
             </span>
             <h2 className="font-display text-xl text-[#1E3A2F]">
-              The Mastery Rubric: Five Phases
+              The Mastery Rubric
             </h2>
             <p className="text-xs text-[#595959] mt-0.5">
               Score Yes / Partly / No against concrete behavioural criteria. A score of “Yes” requires the behaviour to be observed in at least 3 of your last 5 serious games.
@@ -339,7 +334,7 @@ export const MasteryCheckView: React.FC<MasteryCheckProps> = ({
               Section 4
             </span>
             <h2 className="font-display text-xl text-[#1E3A2F]">
-              The Graduation Gauntlet: Mastery Demonstrated, Not Declared
+              The Graduation Gauntlet
             </h2>
           </div>
           <span className="text-xs font-mono text-[#1E3A2F] font-semibold">
@@ -393,7 +388,7 @@ export const MasteryCheckView: React.FC<MasteryCheckProps> = ({
             Section 5
           </span>
           <h2 className="font-display text-xl text-[#1E3A2F]">
-            The Honest Limits, Restated in One Place
+            System Limits & Principles
           </h2>
         </div>
 
@@ -459,7 +454,7 @@ export const MasteryCheckView: React.FC<MasteryCheckProps> = ({
                 <div className="w-4 h-4 bg-[#C6A664] rounded-xs" />
               </div>
               <span className="text-xs font-mono uppercase tracking-widest text-[#595959] block">
-                The Homing Square · Youngprofessir Project
+                The Homing Square
               </span>
               <h1 className="font-display text-3xl sm:text-4xl text-[#1E3A2F] tracking-tight">
                 Homecoming
@@ -491,8 +486,8 @@ export const MasteryCheckView: React.FC<MasteryCheckProps> = ({
             {/* Signatures & Seal */}
             <div className="pt-8 border-t border-[#D9CFC0] flex items-center justify-between text-xs font-mono text-[#595959]">
               <div className="space-y-1 text-left">
-                <span className="block font-semibold text-[#1E3A2F]">Youngprofessir</span>
-                <span>Curriculum Director</span>
+                <span className="block font-semibold text-[#1E3A2F]">The Homing Square</span>
+                <span>Curriculum Council</span>
               </div>
 
               {/* The Gold Seal */}

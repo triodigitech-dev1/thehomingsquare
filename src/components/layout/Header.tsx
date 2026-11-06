@@ -11,7 +11,8 @@ export type NavView =
   | 'mastery'
   | 'commons'
   | 'passport'
-  | 'workshop';
+  | 'workshop'
+  | 'resources';
 
 interface HeaderProps {
   currentView: NavView;
@@ -40,7 +41,8 @@ export const Header: React.FC<HeaderProps> = ({
     { view: 'mastery', label: 'Mastery Check' },
     { view: 'commons', label: 'The Commons' },
     { view: 'passport', label: 'The Passport' },
-    { view: 'workshop', label: 'The Workshop' }
+    { view: 'workshop', label: 'The Workshop' },
+    { view: 'resources', label: 'The Library' }
   ];
 
   return (

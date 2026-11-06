@@ -3,7 +3,7 @@ import { UserProgressState, ConversionPath } from '../../types/chess';
 import { PAWN_STRUCTURES, CONVERSION_PATHS, ERROR_CATEGORIES } from '../../data/structures';
 import { ChessBoard } from '../board/ChessBoard';
 import { NavView } from '../layout/Header';
-import { CheckCircle2, Circle, ArrowUpRight, Compass, Target, Shield, BookOpen } from 'lucide-react';
+import { CheckCircle2, Circle, ArrowUpRight } from 'lucide-react';
 
 interface CockpitViewProps {
   progress: UserProgressState;
@@ -25,7 +25,6 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
   const activePathObj =
     CONVERSION_PATHS.find((p) => p.path === progress.activePath) || CONVERSION_PATHS[1];
 
-  // Calculate error category distribution from logged games
   const errorStats: Record<string, number> = {
     Perception: 0,
     Visualisation: 0,
@@ -48,20 +47,15 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
       {/* State Board Top Header */}
       <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono uppercase text-[#595959] tracking-wider mb-1">
-            <span>The Cockpit · Active State Board</span>
-            <span aria-hidden="true">·</span>
-            <span>{progress.studentName || 'Homecomer'}</span>
-          </div>
           <h1 className="font-display text-2xl sm:text-3xl text-[#1E3A2F] tracking-tight">
-            Where am I, and what is the next move?
+            The Cockpit
           </h1>
-          <p className="text-xs sm:text-sm text-[#595959] mt-1 font-sans">
-            A quiet state board of your current work. No vanity ratings, no flashing coins. Only clarity.
+          <p className="text-xs sm:text-sm text-[#595959] mt-0.5 font-sans">
+            Active pawn structure, live conversion path, daily tasks, and error leak tracking.
           </p>
         </div>
 
-        {/* Live Path Indicator Button Group */}
+        {/* Live Path Selector */}
         <div className="bg-[#EDE6D8] p-1.5 rounded-xl flex items-center gap-1 border border-[#D9CFC0]">
           {(['B', 'A', 'C'] as ConversionPath[]).map((pCode) => {
             const isActive = progress.activePath === pCode;
@@ -91,18 +85,12 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
       {/* Main Grid: Structure + Plan on Left, Live Path + Tasks on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* Left Column (7 cols): The Structure & Plan */}
+        {/* Left Column: Structure & Plan */}
         <div className="lg:col-span-7 bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm space-y-6">
           <div className="flex items-center justify-between border-b border-[#D9CFC0]/60 pb-4">
-            <div>
-              <span className="text-xs font-mono text-[#C6A664] uppercase tracking-wider block">
-                Current Structural Assignment
-              </span>
-              <h2 className="font-display text-xl sm:text-2xl text-[#1E3A2F]">
-                {currentStructure.name}
-              </h2>
-            </div>
-            {/* Quick structure switcher */}
+            <h2 className="font-display text-xl sm:text-2xl text-[#1E3A2F]">
+              {currentStructure.name}
+            </h2>
             <select
               value={currentStructure.id}
               onChange={(e) => onSelectStructure(e.target.value)}
@@ -128,7 +116,7 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
 
             <div className="space-y-4 text-xs font-sans max-w-xs">
               <div>
-                <span className="font-semibold text-[#1E3A2F] block mb-1">Pawn Skeleton:</span>
+                <span className="font-semibold text-[#1E3A2F] block mb-1">Pawn Skeleton</span>
                 <span className="font-mono text-[#595959] block">
                   White: {currentStructure.whitePawnSkeleton.slice(0, 4).join(', ')}...
                 </span>
@@ -138,31 +126,22 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
               </div>
 
               <div>
-                <span className="font-semibold text-[#1E3A2F] block mb-1">Key Breaks:</span>
+                <span className="font-semibold text-[#1E3A2F] block mb-1">Breaks</span>
                 <span className="text-[#595959] block">White: {currentStructure.whiteBreaks.join(' · ')}</span>
                 <span className="text-[#595959] block">Black: {currentStructure.blackBreaks.join(' · ')}</span>
-              </div>
-
-              <div>
-                <span className="font-semibold text-[#1E3A2F] block mb-1">Historical Model:</span>
-                <span className="text-[#595959] italic block">{currentStructure.historicalModel}</span>
               </div>
             </div>
           </div>
 
-          {/* Persistent One-Sentence Plan Box */}
-          <div className="p-4 bg-[#EDE6D8]/70 rounded-xl border border-[#D9CFC0] space-y-1.5">
-            <div className="flex items-center justify-between text-xs font-mono text-[#595959]">
-              <span>M1 Checkpoint · One-Sentence Plan</span>
-              <span className="text-[#1E3A2F] font-semibold">Active Directive</span>
-            </div>
+          {/* Plan Box */}
+          <div className="p-4 bg-[#EDE6D8]/70 rounded-xl border border-[#D9CFC0] space-y-1">
+            <span className="text-xs font-mono text-[#595959] block">One-Sentence Plan</span>
             <p className="font-display italic text-base sm:text-lg text-[#1E3A2F] leading-snug">
               “{currentStructure.oneSentencePlan}”
             </p>
           </div>
 
-          <div className="pt-2 flex items-center justify-between text-xs text-[#595959]">
-            <span>Universal Loop: After every major trade or break, re-run M1.</span>
+          <div className="pt-2 flex items-center justify-end text-xs">
             <button
               type="button"
               onClick={() => onNavigate('lesson')}
@@ -174,33 +153,25 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
           </div>
         </div>
 
-        {/* Right Column (5 cols): Live Path Details, 3 Bounded Tasks & Error Heat Map */}
+        {/* Right Column: Live Path, Tasks & Error Heat Map */}
         <div className="lg:col-span-5 space-y-8">
           
           {/* Active Conversion Path Details */}
           <div className="bg-[#FAF7F2] rounded-2xl p-6 border border-[#D9CFC0]/60 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase tracking-wider text-[#C6A664]">
-                Active Operational Gear
-              </span>
+              <h3 className="font-display text-lg text-[#1E3A2F] font-semibold">
+                {activePathObj.name}
+              </h3>
               <span className="text-xs px-2 py-0.5 rounded bg-[#1E3A2F] text-[#F6F1E7] font-mono">
                 Path {activePathObj.path}
               </span>
             </div>
 
-            <div>
-              <h3 className="font-display text-lg text-[#1E3A2F] font-semibold">
-                {activePathObj.name}
-              </h3>
-              <p className="text-xs text-[#595959] mt-1 leading-relaxed font-sans">
-                {activePathObj.condition}
-              </p>
-            </div>
+            <p className="text-xs text-[#595959] leading-relaxed font-sans">
+              {activePathObj.condition}
+            </p>
 
             <div className="pt-2 border-t border-[#D9CFC0]/60 space-y-1.5">
-              <span className="text-[11px] font-semibold text-[#1E3A2F] uppercase tracking-wide block">
-                Operational Rules:
-              </span>
               <ul className="text-xs text-[#595959] space-y-1 font-sans">
                 {activePathObj.rules.map((rule, idx) => (
                   <li key={idx} className="flex items-start gap-1.5">
@@ -252,26 +223,15 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
                 </button>
               ))}
             </div>
-
-            <div className="pt-2 flex items-center justify-between text-xs text-[#595959]">
-              <span>Small sessions. No marathon burnout.</span>
-              <button
-                type="button"
-                onClick={() => onNavigate('drills')}
-                className="text-[#1E3A2F] font-medium hover:underline"
-              >
-                Open Drill Hall →
-              </button>
-            </div>
           </div>
 
-          {/* Error Leaks Heat Map */}
+          {/* Error Heat Map */}
           <div className="bg-[#FAF7F2] rounded-2xl p-6 border border-[#D9CFC0]/60 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-display text-lg text-[#1E3A2F]">
-                Diagnostic Leaks (From The Log)
+                Error Categories
               </h3>
-              <span className="text-xs font-mono text-[#595959]">{totalErrors} Logged Leaks</span>
+              <span className="text-xs font-mono text-[#595959]">{totalErrors} Logged</span>
             </div>
 
             <div className="space-y-3">
@@ -284,7 +244,6 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
                       <span className="font-medium text-[#262626]">{cat.label}</span>
                       <span className="font-mono text-[#595959]">{count} ({pct}%)</span>
                     </div>
-                    {/* Quiet progress bar */}
                     <div className="w-full h-2 bg-[#EDE6D8] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-[#A8553F] rounded-full transition-all duration-300"
@@ -295,37 +254,22 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
                 );
               })}
             </div>
-
-            <div className="pt-2 border-t border-[#D9CFC0]/60 flex items-center justify-between text-xs text-[#595959]">
-              <span>Every leak converts to a flashcard.</span>
-              <button
-                type="button"
-                onClick={() => onNavigate('log')}
-                className="text-[#1E3A2F] font-semibold hover:underline"
-              >
-                View Full Log →
-              </button>
-            </div>
           </div>
 
         </div>
 
       </div>
 
-      {/* Pre-Game Protocol & Scan Engine Strip */}
-      <div className="p-6 bg-[#1E3A2F] text-[#F6F1E7] rounded-2xl border border-[#C6A664]/30 shadow-md">
+      {/* V1 Scan Engine Strip */}
+      <div className="p-5 bg-[#1E3A2F] text-[#F6F1E7] rounded-2xl border border-[#C6A664]/30 shadow-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-mono text-[#C6A664] uppercase tracking-wider">
-              <span>Appendix · In-Game Scan Execution</span>
+          <div className="space-y-0.5">
+            <span className="text-xs font-mono text-[#C6A664] uppercase tracking-wider block">
+              Scan Protocol
+            </span>
+            <div className="font-display text-base text-[#F6F1E7]">
+              Checks → Captures → Threats → Loose Pieces → King Safety
             </div>
-            <h4 className="font-display text-lg text-[#F6F1E7]">
-              The V1 Scan Order: Checks → Captures → Threats → Loose Pieces → King Safety
-            </h4>
-            <p className="text-xs text-[#D9CFC0] max-w-2xl font-sans">
-              Before calculating your attacking candidate moves, enforce the V1 perimeter scan on both sides.
-              Then re-run M1 after every trade or break.
-            </p>
           </div>
 
           <button
@@ -333,7 +277,7 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
             onClick={() => onNavigate('drills')}
             className="px-4 py-2 bg-[#C6A664] hover:bg-[#DFCA95] text-[#1E3A2F] font-semibold text-xs rounded-lg transition-colors shrink-0"
           >
-            Launch 15-Min Scan Drill
+            Launch Scan Drill
           </button>
         </div>
       </div>

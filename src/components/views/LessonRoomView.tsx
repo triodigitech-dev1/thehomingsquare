@@ -150,7 +150,7 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
           <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono uppercase tracking-widest text-[#C6A664]">
-                Unit {currentUnit.unitCode} · Lifespan Coursework
+                Unit {currentUnit.unitCode}
               </span>
               {isAlreadyCompleted && (
                 <div className="flex items-center gap-1.5 text-xs text-[#1E3A2F] font-semibold">
@@ -190,14 +190,9 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
           {/* Interactive Chess Stage for this Unit */}
           <div className="bg-[#FAF7F2] rounded-2xl p-6 border border-[#D9CFC0]/60 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs font-mono text-[#595959] uppercase tracking-wide">
-                  Model Position & Geometry
-                </span>
-                <h3 className="font-display text-lg text-[#1E3A2F]">
-                  The Physical Board
-                </h3>
-              </div>
+              <h3 className="font-display text-lg text-[#1E3A2F]">
+                Model Position
+              </h3>
               <button
                 type="button"
                 onClick={() => setPawnSkeletonMode(!pawnSkeletonMode)}
@@ -216,19 +211,14 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
                 size="md"
               />
             </div>
-            <p className="text-center text-xs text-[#595959] italic font-sans">
-              Test moves freely on the board. Hear the wooden click. Observe the outposts created by the pawn skeleton.
-            </p>
           </div>
 
-          {/* Mandatory Checkpoint: Passive Consumption Strictly Blocked */}
+          {/* Checkpoint */}
           <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm space-y-5">
             <div className="border-b border-[#D9CFC0]/60 pb-3">
-              <div className="flex items-center gap-2 text-xs font-mono uppercase text-[#A8553F] tracking-wider mb-1">
-                <span>Mandatory Unit Checkpoint</span>
-                <span aria-hidden="true">·</span>
-                <span>Active Recall Protocol</span>
-              </div>
+              <span className="text-xs font-mono uppercase text-[#1E3A2F] tracking-wider block mb-1">
+                Checkpoint
+              </span>
               <h3 className="font-display text-lg text-[#1E3A2F]">
                 {currentUnit.checkpoint.question}
               </h3>
@@ -276,7 +266,7 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
             {/* Checkpoint Submit / Retry */}
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
               <span className="text-xs text-[#595959]">
-                The lesson will not let you consume it passively. Answer to advance.
+                Select an answer to complete the checkpoint.
               </span>
 
               {!hasSubmitted || !isCorrect ? (
@@ -290,7 +280,7 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
                 </button>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#1E3A2F] font-semibold">Completed & Saved</span>
+                  <span className="text-xs text-[#1E3A2F] font-semibold">Completed</span>
                   {nextUnit && (
                     <button
                       type="button"
@@ -317,12 +307,12 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
                   {isCorrect ? (
                     <>
                       <CheckCircle2 className="w-4 h-4 text-[#1E3A2F]" />
-                      <span>Correct — Unit Mastered</span>
+                      <span>Correct</span>
                     </>
                   ) : (
                     <>
                       <AlertCircle className="w-4 h-4 text-[#A8553F]" />
-                      <span>Incorrect — Re-read the principles and try again</span>
+                      <span>Incorrect — Try again</span>
                     </>
                   )}
                 </div>
@@ -344,7 +334,7 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
           <div className="bg-[#FAF7F2] rounded-2xl p-5 border border-[#D9CFC0]/60 shadow-sm space-y-4 sticky top-24">
             <div className="border-b border-[#D9CFC0]/60 pb-3">
               <span className="text-xs font-mono text-[#C6A664] uppercase tracking-wider block">
-                Persistent Anchor
+                Structure
               </span>
               <h3 className="font-display text-lg text-[#1E3A2F]">
                 {associatedStructure.name}
@@ -379,9 +369,9 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
             </div>
 
             <div className="pt-3 border-t border-[#D9CFC0]/60 text-[11px] text-[#595959] space-y-1">
-              <strong className="text-[#1E3A2F] block">The Continuous Question:</strong>
-              <p className="italic">
-                “What is the structure, what plan belongs to it, and has anything just changed?”
+              <span className="font-semibold text-[#1E3A2F] block">Core Question:</span>
+              <p className="italic text-[#262626]">
+                What is the structure, what plan belongs to it, and has anything just changed?
               </p>
             </div>
           </div>

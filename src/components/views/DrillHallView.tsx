@@ -3,7 +3,7 @@ import { Flashcard, UserProgressState } from '../../types/chess';
 import { DRILL_FLASHCARDS } from '../../data/drills';
 import { ChessBoard, playWoodenClick } from '../board/ChessBoard';
 import { NavView } from '../layout/Header';
-import { Target, Zap, RotateCcw, CheckCircle2, AlertCircle, ArrowRight, Shield } from 'lucide-react';
+import { CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 
 interface DrillHallProps {
   progress: UserProgressState;
@@ -16,26 +16,24 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
   onIncrementDrills,
   onNavigate
 }) => {
-  // Combine pre-built drills with any custom flashcards created from the log
   const allDrills: Flashcard[] = [...DRILL_FLASHCARDS];
 
-  // Also convert logged errors into flashcards if available
   progress.loggedGames.forEach((game) => {
     game.errorLeaks.forEach((leak, idx) => {
       allDrills.push({
         id: `custom_leak_${game.id}_${idx}`,
         type: 'custom_leak',
-        category: `Your Logged Leak: ${leak.category}`,
-        prompt: `Game: "${game.title}" (Move ${leak.moveNumber}). You suffered a ${leak.category} leak. What is the correction?`,
+        category: `Logged Leak: ${leak.category}`,
+        prompt: `Game: "${game.title}" (Move ${leak.moveNumber}). ${leak.category} leak. What is the correction?`,
         fen: game.fenKeyPosition || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
         options: [
           leak.lesson,
-          'Ignore the opponent threat and push a flank pawn',
-          'Offer a draw immediately to salvage rating',
-          'Play fast without running the V1 scan'
+          'Ignore the opponent threat and advance a flank pawn',
+          'Offer a draw immediately',
+          'Play without running the V1 scan'
         ],
         solution: leak.lesson,
-        explanation: `Diagnostic Note: ${leak.description}`
+        explanation: leak.description
       });
     });
   });
@@ -48,13 +46,13 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
   const [sessionCompletedCount, setSessionCompletedCount] = useState(0);
 
   const categories = [
-    { id: 'all', label: 'All Stations' },
-    { id: 'structure', label: 'Structure Flashcards' },
-    { id: 'mating_pattern', label: 'Mating Patterns (P6)' },
-    { id: 'v1_scan', label: 'V1 Scan Order' },
+    { id: 'all', label: 'All' },
+    { id: 'structure', label: 'Structures' },
+    { id: 'mating_pattern', label: 'Mating Patterns' },
+    { id: 'v1_scan', label: 'V1 Scan' },
     { id: 'path_choice', label: 'Path Switching' },
     { id: 'defense', label: 'Defensive Fortresses' },
-    { id: 'custom_leak', label: 'Your Error Queue' }
+    { id: 'custom_leak', label: 'Error Queue' }
   ];
 
   const filteredDrills = allDrills.filter((d) => {
@@ -89,24 +87,20 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
       {/* Header Banner */}
       <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono uppercase text-[#595959] tracking-wider mb-1">
-            <span>The Drill Hall · Fast · Repetitive · Measurable</span>
-          </div>
           <h1 className="font-display text-2xl sm:text-3xl text-[#1E3A2F] tracking-tight">
-            The Training Floor
+            The Drill Hall
           </h1>
           <p className="text-xs sm:text-sm text-[#595959] mt-1 font-sans">
-            Mating patterns, scan drills, structure flashcards, path choices, and a spaced-repetition queue that resurfaces your own logged errors.
+            Mating patterns, scan drills, structure flashcards, path choices, and error review.
           </p>
         </div>
 
         {/* Drill Stats Counter */}
         <div className="bg-[#EDE6D8] p-4 rounded-xl border border-[#D9CFC0] text-right shrink-0">
-          <div className="text-xs font-mono text-[#595959]">Drills Finished</div>
+          <div className="text-xs font-mono text-[#595959]">Completed</div>
           <div className="font-display text-2xl text-[#1E3A2F] font-semibold">
             {progress.drillsCompletedCount + sessionCompletedCount}
           </div>
-          <div className="text-[11px] text-[#595959] mt-0.5">Session: +{sessionCompletedCount}</div>
         </div>
       </div>
 
@@ -141,7 +135,7 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
           <div className="w-full flex items-center justify-between text-xs font-mono text-[#595959] mb-4">
             <span className="uppercase text-[#C6A664] font-semibold">{activeDrill.category}</span>
             <span>
-              Item {(currentIndex % filteredDrills.length) + 1} of {filteredDrills.length}
+              {(currentIndex % filteredDrills.length) + 1} of {filteredDrills.length}
             </span>
           </div>
 
@@ -151,22 +145,13 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
             size="md"
             homingSquare="c5"
           />
-
-          <div className="mt-4 text-center text-xs text-[#595959] italic font-sans">
-            Grounded in Unit P6 Mating Patterns and Chapter 2.5 Scanning Protocols.
-          </div>
         </div>
 
         {/* Challenge & Response (6 cols) */}
         <div className="lg:col-span-6 bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm space-y-6">
-          <div>
-            <span className="text-xs font-mono uppercase tracking-widest text-[#595959] block mb-1">
-              Active Flashcard Challenge
-            </span>
-            <h2 className="font-display text-xl sm:text-2xl text-[#1E3A2F] leading-snug">
-              {activeDrill.prompt}
-            </h2>
-          </div>
+          <h2 className="font-display text-xl sm:text-2xl text-[#1E3A2F] leading-snug">
+            {activeDrill.prompt}
+          </h2>
 
           {/* Options */}
           <div className="space-y-3">
@@ -215,12 +200,12 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
                 {isCorrect ? (
                   <>
                     <CheckCircle2 className="w-4 h-4 text-[#1E3A2F]" />
-                    <span>Exact Recall Demonstrated</span>
+                    <span>Correct</span>
                   </>
                 ) : (
                   <>
                     <AlertCircle className="w-4 h-4 text-[#A8553F]" />
-                    <span>Incorrect — Review the structural clue below</span>
+                    <span>Incorrect</span>
                   </>
                 )}
               </div>
@@ -229,34 +214,18 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
           )}
 
           {/* Action Row */}
-          <div className="pt-2 flex items-center justify-between border-t border-[#D9CFC0]/60">
-            <span className="text-xs text-[#595959]">
-              {isCorrect ? 'Well solved. Move to next position.' : 'Make your choice.'}
-            </span>
-
+          <div className="pt-2 flex items-center justify-end border-t border-[#D9CFC0]/60">
             <button
               type="button"
               onClick={handleNextDrill}
               className="px-4 py-2 bg-[#1E3A2F] hover:bg-[#152921] text-[#F6F1E7] text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
             >
-              <span>Next Drill</span>
+              <span>Next</span>
               <ArrowRight className="w-3.5 h-3.5 text-[#C6A664]" />
             </button>
           </div>
         </div>
 
-      </div>
-
-      {/* Spaced-Repetition Explanation Banner */}
-      <div className="bg-[#FAF7F2] rounded-2xl p-6 border border-[#D9CFC0]/60 text-xs text-[#595959] space-y-2">
-        <strong className="text-[#1E3A2F] font-semibold text-sm block">
-          How the Spaced-Repetition Queue Works (Chapter 2.5 & 6.2)
-        </strong>
-        <p className="leading-relaxed font-sans">
-          When you log a game with a Perception, Visualisation, Knowledge, or Decision leak in <strong>The Log</strong>,
-          The Homing Square immediately creates a custom flashcard in your Drill Hall queue.
-          Reviewing your own errors every morning prevents recurring tactical blind spots.
-        </p>
       </div>
     </div>
   );

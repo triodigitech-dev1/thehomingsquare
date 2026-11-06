@@ -102,15 +102,11 @@ export const LogView: React.FC<LogViewProps> = ({
       {/* Header Banner */}
       <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono uppercase text-[#595959] tracking-wider mb-1">
-            <span>The Heart of The Platform · 5-Question Audit</span>
-          </div>
           <h1 className="font-display text-2xl sm:text-3xl text-[#1E3A2F] tracking-tight">
-            The Log: Where You Bring Your Own Games
+            The Log
           </h1>
-          <p className="text-xs sm:text-sm text-[#595959] mt-1 font-sans max-w-2xl">
-            Import or paste, then answer the same five questions every time.
-            The log quietly turns your mistakes into flashcards and feeds the Graduation Gauntlet.
+          <p className="text-xs sm:text-sm text-[#595959] mt-1 font-sans">
+            Import or paste games and answer the five diagnostic questions.
           </p>
         </div>
 
@@ -120,7 +116,7 @@ export const LogView: React.FC<LogViewProps> = ({
           className="px-4 py-2.5 bg-[#1E3A2F] hover:bg-[#152921] text-[#F6F1E7] text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 shrink-0 shadow-sm"
         >
           <Plus className="w-4 h-4 text-[#C6A664]" />
-          <span>{isAddingNew ? 'Close Form' : 'Log a New Game'}</span>
+          <span>{isAddingNew ? 'Close Form' : 'Log a Game'}</span>
         </button>
       </div>
 
@@ -136,7 +132,7 @@ export const LogView: React.FC<LogViewProps> = ({
                 New Audit Entry
               </span>
               <h2 className="font-display text-xl text-[#1E3A2F]">
-                Answer the 5 Mandatory Diagnostic Questions
+                Post-Game Diagnostic Audit
               </h2>
             </div>
             <button
@@ -474,7 +470,7 @@ export const LogView: React.FC<LogViewProps> = ({
               {/* Answer 1: Structure */}
               <div className="p-4 bg-white rounded-xl border border-[#D9CFC0] space-y-1">
                 <span className="text-[11px] font-mono uppercase text-[#C6A664] tracking-wider block">
-                  Question 1 · The Named Pawn Structure
+                  1. Pawn Structure
                 </span>
                 <span className="font-display text-base font-semibold text-[#1E3A2F] block">
                   {activeGame.structure}
@@ -484,7 +480,7 @@ export const LogView: React.FC<LogViewProps> = ({
               {/* Answer 2: One-Sentence Plan */}
               <div className="p-4 bg-white rounded-xl border border-[#D9CFC0] space-y-1">
                 <span className="text-[11px] font-mono uppercase text-[#C6A664] tracking-wider block">
-                  Question 2 · One-Sentence Plan (M1 Checkpoint)
+                  2. One-Sentence Plan
                 </span>
                 <p className="font-display italic text-sm text-[#1E3A2F] leading-relaxed">
                   “{activeGame.oneSentencePlan}”
@@ -494,7 +490,7 @@ export const LogView: React.FC<LogViewProps> = ({
               {/* Answer 3: Path Switch */}
               <div className="p-4 bg-white rounded-xl border border-[#D9CFC0] space-y-1.5 text-xs">
                 <span className="text-[11px] font-mono uppercase text-[#C6A664] tracking-wider block">
-                  Question 3 · Path Switching Moment
+                  3. Conversion Path Switch
                 </span>
                 {activeGame.pathSwitch.occurred ? (
                   <div>
@@ -511,7 +507,7 @@ export const LogView: React.FC<LogViewProps> = ({
               {/* Answer 4: Defensive Resource */}
               <div className="p-4 bg-white rounded-xl border border-[#D9CFC0] space-y-1.5 text-xs">
                 <span className="text-[11px] font-mono uppercase text-[#C6A664] tracking-wider block">
-                  Question 4 · Defensive / Prophylactic Resource (Unit 4.3 & 4.4)
+                  4. Defensive / Prophylactic Resource
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-[#1E3A2F]">
@@ -525,7 +521,7 @@ export const LogView: React.FC<LogViewProps> = ({
               <div className="p-4 bg-white rounded-xl border border-[#D9CFC0] space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-mono uppercase text-[#A8553F] tracking-wider block">
-                    Question 5 · Error Leaks Categorised
+                    5. Error Leaks Categorised
                   </span>
                   <span className="text-[11px] text-[#595959]">
                     {activeGame.errorLeaks.length} Recorded
@@ -572,14 +568,13 @@ export const LogView: React.FC<LogViewProps> = ({
             )}
 
             {/* Bottom Actions */}
-            <div className="pt-2 flex items-center justify-between text-xs text-[#595959]">
-              <span>Ten verified game logs fulfill the Graduation Gauntlet.</span>
+            <div className="pt-2 flex items-center justify-end text-xs text-[#595959]">
               <button
                 type="button"
                 onClick={() => onNavigate('mastery')}
                 className="text-[#1E3A2F] font-semibold hover:underline flex items-center gap-1"
               >
-                <span>Check Gauntlet Progress in Mastery</span>
+                <span>Mastery Check</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>

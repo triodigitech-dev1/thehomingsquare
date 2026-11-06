@@ -15,6 +15,7 @@ import { MasteryCheckView } from './components/views/MasteryCheckView';
 import { CommonsView } from './components/views/CommonsView';
 import { PassportView } from './components/views/PassportView';
 import { WorkshopView } from './components/views/WorkshopView';
+import { ResourcesView } from './components/views/ResourcesView';
 import { UserProgressState, CurriculumUnit, LoggedGame, ConversionPath } from './types/chess';
 import { CURRICULUM_CHAPTERS } from './data/curriculum';
 import { PAWN_STRUCTURES } from './data/structures';
@@ -242,6 +243,12 @@ export default function App() {
             onNavigate={setCurrentView}
           />
         )}
+
+        {currentView === 'resources' && (
+          <ResourcesView
+            onNavigate={setCurrentView}
+          />
+        )}
       </main>
 
       {/* Quiet, Dignified Study Footer */}
@@ -260,9 +267,6 @@ export default function App() {
             </div>
             <p className="font-display italic text-sm text-[#C6A664]">
               “Every piece has a home square.”
-            </p>
-            <p className="text-xs text-[#D9CFC0]/70 max-w-sm">
-              Paper and lamplight, a lit square, and a quiet invitation home. A Youngprofessir Project.
             </p>
           </div>
 
@@ -326,10 +330,24 @@ export default function App() {
             </button>
             <button
               type="button"
+              onClick={() => setCurrentView('passport')}
+              className="hover:text-[#F6F1E7] transition-colors"
+            >
+              The Passport
+            </button>
+            <button
+              type="button"
               onClick={() => setCurrentView('workshop')}
               className="hover:text-[#F6F1E7] transition-colors"
             >
               The Workshop
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentView('resources')}
+              className="hover:text-[#C6A664] transition-colors font-semibold"
+            >
+              The Library
             </button>
           </div>
 

@@ -24,17 +24,11 @@ export const MapView: React.FC<MapViewProps> = ({ progress, onSelectUnit, onNavi
       {/* Journey Banner */}
       <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono uppercase text-[#595959] tracking-wider mb-1">
-            <span>The Journey · Lifespan Curriculum</span>
-            <span aria-hidden="true">·</span>
-            <span>Elo 1000–2700+</span>
-          </div>
           <h1 className="font-display text-2xl sm:text-3xl text-[#1E3A2F] tracking-tight">
-            The Map: Drawn as a Journey, Not a Menu
+            The Map
           </h1>
           <p className="text-xs sm:text-sm text-[#595959] mt-1 font-sans max-w-2xl">
-            Structures appear as places to visit; chapters as regions; the Mastery Check as the horizon.
-            You are not consuming content — you are traversing terrain.
+            Prerequisite and Chapters 1 to 8 leading to the Mastery Check.
           </p>
         </div>
 
@@ -185,8 +179,7 @@ export const MapView: React.FC<MapViewProps> = ({ progress, onSelectUnit, onNavi
                         </p>
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-[#D9CFC0]/40 flex items-center justify-between text-[11px] text-[#595959]">
-                        <span>Expected Outcome: Competence</span>
+                      <div className="mt-4 pt-3 border-t border-[#D9CFC0]/40 flex items-center justify-end text-[11px] text-[#595959]">
                         <span className="text-[#1E3A2F] font-medium flex items-center gap-1">
                           <span>Enter Lesson</span>
                           <ArrowRight className="w-3 h-3 text-[#C6A664]" />
