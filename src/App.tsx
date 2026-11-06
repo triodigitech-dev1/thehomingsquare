@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { Header, NavView } from './components/layout/Header';
 import { DoorView } from './components/views/DoorView';
 import { CockpitView } from './components/views/CockpitView';
@@ -16,16 +17,18 @@ import { CommonsView } from './components/views/CommonsView';
 import { PassportView } from './components/views/PassportView';
 import { WorkshopView } from './components/views/WorkshopView';
 import { ResourcesView } from './components/views/ResourcesView';
-import { UserProgressState, CurriculumUnit, LoggedGame, ConversionPath } from './types/chess';
+import { StudentAuthModal } from './components/auth/StudentAuthModal';
+import { UserProgressState, CurriculumUnit, LoggedGame, ConversionPath, StudentAccount } from './types/chess';
 import { CURRICULUM_CHAPTERS } from './data/curriculum';
 import { PAWN_STRUCTURES } from './data/structures';
 import { INITIAL_LOGGED_GAMES } from './data/loggedGames';
-import { Download, Shield } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 const STORAGE_KEY = 'homing_square_progress_v1';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<NavView>('door');
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentUnit, setCurrentUnit] = useState<CurriculumUnit>(() => {
     return CURRICULUM_CHAPTERS[2].units[0]; // Unit 2.1: Pawn Structures
   });
@@ -61,7 +64,17 @@ export default function App() {
         rubric_endgame: 'Yes',
         rubric_discipline: 'Yes'
       },
-      studentName: 'Rex Viscot'
+      studentName: 'Rex Viscot',
+      studentAccount: {
+        isAuthenticated: false,
+        studentId: 'HS-2026-8841',
+        fullName: 'Rex Viscot',
+        email: 'rexviscot44@gmail.com',
+        cohort: 'Cohort 01 (Active Term)',
+        tier: 'Mastery (Elo 1600–2200)',
+        enrolledDate: '2026-03-01',
+        status: 'Active Scholar'
+      }
     };
   });
 
@@ -70,11 +83,31 @@ export default function App() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
     } catch {
-      // Local storage full or blocked
+      // Storage failed silently
     }
   }, [progress]);
 
-  const handleUpdateTasks = (taskId: string) => {
+  const handleStudentAuthenticate = (account: StudentAccount) => {
+    setProgress((prev) => ({
+      ...prev,
+      studentAccount: account,
+      studentName: account.fullName
+    }));
+    // Once enrolled or signed in, welcome them into the classroom
+    setCurrentView('lesson');
+  };
+
+  const handleSelectStructure = (structureId: string) => {
+    const struct = PAWN_STRUCTURES.find((s) => s.id === structureId);
+    if (!struct) return;
+    setProgress((prev) => ({
+      ...prev,
+      currentStructureId: struct.id,
+      oneSentencePlan: struct.oneSentencePlan
+    }));
+  };
+
+  const handleToggleTask = (taskId: string) => {
     setProgress((prev) => ({
       ...prev,
       dailyTasks: prev.dailyTasks.map((t) =>
@@ -90,16 +123,6 @@ export default function App() {
     }));
   };
 
-  const handleSelectStructure = (structId: string) => {
-    const struct = PAWN_STRUCTURES.find((s) => s.id === structId);
-    if (!struct) return;
-    setProgress((prev) => ({
-      ...prev,
-      currentStructureId: structId,
-      oneSentencePlan: struct.oneSentencePlan
-    }));
-  };
-
   const handleCompleteUnit = (unitId: string) => {
     setProgress((prev) => {
       if (prev.completedUnitIds.includes(unitId)) return prev;
@@ -110,18 +133,17 @@ export default function App() {
     });
   };
 
-  const handleAddGame = (newGame: LoggedGame) => {
-    setProgress((prev) => ({
-      ...prev,
-      loggedGames: [newGame, ...prev.loggedGames],
-      gauntletGamesCount: prev.gauntletGamesCount + 1
-    }));
-  };
-
   const handleIncrementDrills = () => {
     setProgress((prev) => ({
       ...prev,
       drillsCompletedCount: prev.drillsCompletedCount + 1
+    }));
+  };
+
+  const handleAddGame = (game: LoggedGame) => {
+    setProgress((prev) => ({
+      ...prev,
+      loggedGames: [game, ...prev.loggedGames]
     }));
   };
 
@@ -135,10 +157,13 @@ export default function App() {
     }));
   };
 
-  const handleUpdateName = (name: string) => {
+  const handleUpdateStudentName = (name: string) => {
     setProgress((prev) => ({
       ...prev,
-      studentName: name
+      studentName: name,
+      studentAccount: prev.studentAccount
+        ? { ...prev.studentAccount, fullName: name }
+        : undefined
     }));
   };
 
@@ -150,14 +175,15 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F6F1E7] text-[#262626]">
-      {/* Persistent Quiet Top Navigation */}
+    <div className="min-h-screen bg-[#F6F1E7] text-[#262626] flex flex-col font-sans">
+      {/* Top Bar with emblem, navigation, and student desk access */}
       <Header
         currentView={currentView}
         onNavigate={setCurrentView}
         soundEnabled={progress.soundEnabled}
         onToggleSound={handleToggleSound}
-        unlockedCount={progress.completedUnitIds.length}
+        studentAccount={progress.studentAccount}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -166,13 +192,15 @@ export default function App() {
           <DoorView
             onNavigate={setCurrentView}
             onSelectStructure={handleSelectStructure}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
+            isAuthenticated={progress.studentAccount?.isAuthenticated}
           />
         )}
 
         {currentView === 'cockpit' && (
           <CockpitView
             progress={progress}
-            onUpdateTasks={handleUpdateTasks}
+            onUpdateTasks={handleToggleTask}
             onSetPath={handleSetPath}
             onNavigate={setCurrentView}
             onSelectStructure={handleSelectStructure}
@@ -218,7 +246,7 @@ export default function App() {
           <MasteryCheckView
             progress={progress}
             onUpdateRubric={handleUpdateRubric}
-            onUpdateStudentName={handleUpdateName}
+            onUpdateStudentName={handleUpdateStudentName}
             onNavigate={setCurrentView}
           />
         )}
@@ -234,7 +262,7 @@ export default function App() {
           <PassportView
             progress={progress}
             onNavigate={setCurrentView}
-            onUpdateName={handleUpdateName}
+            onUpdateName={handleUpdateStudentName}
           />
         )}
 
@@ -251,15 +279,28 @@ export default function App() {
         )}
       </main>
 
-      {/* Quiet, Dignified Study Footer */}
+      {/* Student Enrolment / Sign In Modal */}
+      <StudentAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthenticate={handleStudentAuthenticate}
+        currentAccount={progress.studentAccount}
+        soundEnabled={progress.soundEnabled}
+      />
+
+      {/* Quiet, Dignified Academy Footer */}
       <footer className="bg-[#1E3A2F] text-[#D9CFC0] border-t border-[#C6A664]/20 py-12 px-4 sm:px-6 lg:px-8 mt-16 font-sans">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
           
           {/* Brand mark & Ethos */}
           <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-6 h-6 rounded bg-[#152921] border border-[#C6A664]/50 flex items-center justify-center">
-                <div className="w-2.5 h-2.5 bg-[#C6A664] rounded-xs" />
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-lg overflow-hidden bg-[#152921] border border-[#C6A664]/50 flex items-center justify-center p-0.5">
+                <img
+                  src="/assets/aistudio/The_Homing_Square_Chess_Emblem_dbf19a72.png"
+                  alt="Emblem"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <span className="font-display font-medium text-lg text-[#F6F1E7]">
                 The Homing Square
@@ -298,7 +339,7 @@ export default function App() {
               onClick={() => setCurrentView('lesson')}
               className="hover:text-[#F6F1E7] transition-colors"
             >
-              Lesson Room
+              Classroom
             </button>
             <button
               type="button"
@@ -361,12 +402,15 @@ export default function App() {
               className="text-xs text-[#C6A664] hover:text-[#DFCA95] flex items-center gap-1.5 transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Course Guide PDF</span>
+              <span>Curriculum Guide PDF</span>
             </a>
           </div>
 
         </div>
       </footer>
+
+      {/* Vercel Web Analytics */}
+      <Analytics />
     </div>
   );
 }

@@ -125,6 +125,17 @@ export interface MasteryRubricPhase {
   notes: string;
 }
 
+export interface StudentAccount {
+  isAuthenticated: boolean;
+  studentId: string;
+  fullName: string;
+  email: string;
+  cohort: string;
+  tier: 'Foundations (Elo 1000–1600)' | 'Mastery (Elo 1600–2200)' | 'Candidate (Elo 2200+)';
+  enrolledDate: string;
+  status: 'Active Scholar' | 'Graduation Candidate' | 'Alumnus';
+}
+
 export interface UserProgressState {
   currentStructureId: string;
   activePath: ConversionPath;
@@ -142,4 +153,5 @@ export interface UserProgressState {
   rubricScores: Record<string, 'Yes' | 'Partly' | 'No'>;
   studentName: string;
   completionDate?: string;
+  studentAccount?: StudentAccount;
 }

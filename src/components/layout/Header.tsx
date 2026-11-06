@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX, Menu, X, Shield, BookOpen, Compass, Award } from 'lucide-react';
+import { Volume2, VolumeX, Menu, X, Shield, BookOpen, Compass, Award, GraduationCap, UserCheck } from 'lucide-react';
+import { StudentAccount } from '../../types/chess';
 
 export type NavView =
   | 'door'
@@ -19,7 +20,8 @@ interface HeaderProps {
   onNavigate: (view: NavView) => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
-  unlockedCount?: number;
+  studentAccount?: StudentAccount;
+  onOpenAuthModal: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,7 +29,8 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate,
   soundEnabled,
   onToggleSound,
-  unlockedCount = 3
+  studentAccount,
+  onOpenAuthModal
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -35,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
     { view: 'door', label: 'The Door' },
     { view: 'cockpit', label: 'The Cockpit' },
     { view: 'map', label: 'The Map' },
-    { view: 'lesson', label: 'Lesson Room' },
+    { view: 'lesson', label: 'Classroom' },
     { view: 'drills', label: 'Drill Hall' },
     { view: 'log', label: 'The Log' },
     { view: 'mastery', label: 'Mastery Check' },
@@ -47,26 +50,27 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-50 bg-[#1E3A2F] text-[#F6F1E7] border-b border-[#C6A664]/20 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">
         
-        {/* Zone 1: Single Brand Mark / Wordmark */}
+        {/* Zone 1: Official Crest Emblem & Academy Name */}
         <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
             onClick={() => onNavigate('door')}
-            className="flex items-center gap-2.5 text-left group focus:outline-none"
+            className="flex items-center gap-3 text-left group focus:outline-none"
           >
-            {/* The Mark: Lit Square with returning arc */}
-            <div className="w-8 h-8 rounded-md bg-[#152921] border border-[#C6A664]/40 flex items-center justify-center relative overflow-hidden group-hover:border-[#C6A664] transition-colors">
-              <div className="w-3.5 h-3.5 bg-[#C6A664] rounded-xs relative">
-                {/* Returning arc */}
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 border-t border-r border-[#1E3A2F] rounded-tr-full" />
-              </div>
+            {/* The Authentic Emblem from Uploaded Assets */}
+            <div className="w-9 h-9 rounded-lg overflow-hidden bg-[#152921] border border-[#C6A664]/40 flex items-center justify-center p-0.5 group-hover:border-[#C6A664] transition-colors shadow-xs">
+              <img
+                src="/assets/aistudio/The_Homing_Square_Chess_Emblem_dbf19a72.png"
+                alt="The Homing Square Emblem"
+                className="w-full h-full object-contain"
+              />
             </div>
 
             <div className="flex flex-col">
               <span className="font-display text-lg tracking-tight text-[#F6F1E7] group-hover:text-[#C6A664] transition-colors whitespace-nowrap leading-none">
-                <span className="font-light italic text-xs tracking-wider uppercase block text-[#D9CFC0]">The</span>
+                <span className="font-light italic text-[11px] tracking-wider uppercase block text-[#D9CFC0]">The</span>
                 <span className="font-medium">Homing Square</span>
               </span>
             </div>
@@ -74,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Zone 2: Navigation Links (single line, clean typography) */}
-        <nav className="hidden xl:flex items-center gap-5 text-sm font-sans tracking-wide">
+        <nav className="hidden xl:flex items-center gap-4 text-sm font-sans tracking-wide">
           {navLinks.map((item) => {
             const isActive = currentView === item.view;
             return (
@@ -98,11 +102,11 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
 
         {/* Compact Navigation for Medium Screens (lg) */}
-        <nav className="hidden md:flex xl:hidden items-center gap-4 text-xs font-sans">
+        <nav className="hidden md:flex xl:hidden items-center gap-3 text-xs font-sans">
           {[
             { view: 'cockpit' as NavView, label: 'Cockpit' },
             { view: 'map' as NavView, label: 'Map' },
-            { view: 'lesson' as NavView, label: 'Lessons' },
+            { view: 'lesson' as NavView, label: 'Classroom' },
             { view: 'drills' as NavView, label: 'Drills' },
             { view: 'log' as NavView, label: 'Log' },
             { view: 'mastery' as NavView, label: 'Mastery' },
@@ -123,8 +127,9 @@ export const Header: React.FC<HeaderProps> = ({
           ))}
         </nav>
 
-        {/* Zone 3: Primary Action & Sound Toggle */}
+        {/* Zone 3: Student Enrolment State, Sound Toggle & Primary Action */}
         <div className="flex items-center gap-3 shrink-0">
+          
           {/* Subtle Sound Toggle */}
           <button
             type="button"
@@ -136,22 +141,56 @@ export const Header: React.FC<HeaderProps> = ({
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
           </button>
 
-          {/* Primary Action Button */}
-          {currentView !== 'cockpit' ? (
+          {/* Student Status Badge / Sign In */}
+          {studentAccount?.isAuthenticated ? (
             <button
               type="button"
-              onClick={() => onNavigate('cockpit')}
-              className="px-4 py-2 text-xs font-medium text-[#1E3A2F] bg-[#C6A664] hover:bg-[#DFCA95] rounded-md transition-colors whitespace-nowrap shadow-sm"
+              onClick={onOpenAuthModal}
+              title="View Student Desk / Switch Enrolment"
+              className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#152921] border border-[#C6A664]/30 text-xs text-[#D9CFC0] hover:border-[#C6A664] transition-colors"
             >
-              Enter Cockpit
+              <GraduationCap className="w-3.5 h-3.5 text-[#C6A664]" />
+              <span className="font-medium text-[#F6F1E7] truncate max-w-[120px]">
+                {studentAccount.fullName}
+              </span>
+              <span className="text-[10px] font-mono text-[#C6A664] hidden md:inline">
+                {studentAccount.studentId.split('-').pop()}
+              </span>
             </button>
           ) : (
             <button
               type="button"
-              onClick={() => onNavigate('lesson')}
-              className="px-4 py-2 text-xs font-medium text-[#1E3A2F] bg-[#C6A664] hover:bg-[#DFCA95] rounded-md transition-colors whitespace-nowrap shadow-sm"
+              onClick={onOpenAuthModal}
+              className="text-xs text-[#D9CFC0] hover:text-[#F6F1E7] hidden sm:inline-block font-medium"
             >
-              Resume Study
+              Sign In
+            </button>
+          )}
+
+          {/* Primary Action Button: "Get Started" or "Enter Class" */}
+          {!studentAccount?.isAuthenticated ? (
+            <button
+              type="button"
+              onClick={onOpenAuthModal}
+              className="px-4 py-2 text-xs font-semibold text-[#1E3A2F] bg-[#C6A664] hover:bg-[#DFCA95] rounded-md transition-colors whitespace-nowrap shadow-sm"
+            >
+              Get Started
+            </button>
+          ) : currentView !== 'lesson' ? (
+            <button
+              type="button"
+              onClick={() => onNavigate('lesson')}
+              className="px-4 py-2 text-xs font-semibold text-[#1E3A2F] bg-[#C6A664] hover:bg-[#DFCA95] rounded-md transition-colors whitespace-nowrap shadow-sm"
+            >
+              Enter Classroom
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onNavigate('cockpit')}
+              className="px-4 py-2 text-xs font-semibold text-[#1E3A2F] bg-[#C6A664] hover:bg-[#DFCA95] rounded-md transition-colors whitespace-nowrap shadow-sm"
+            >
+              State Board
             </button>
           )}
 
@@ -170,7 +209,28 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#152921] border-b border-[#C6A664]/20 px-4 py-3 space-y-1">
+        <div className="md:hidden bg-[#152921] border-b border-[#C6A664]/20 px-4 py-3 space-y-2">
+          {studentAccount?.isAuthenticated ? (
+            <div className="p-2.5 bg-[#1E3A2F] rounded-lg border border-[#C6A664]/30 flex items-center justify-between text-xs mb-2">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-[#C6A664]" />
+                <span className="font-semibold text-[#F6F1E7]">{studentAccount.fullName}</span>
+              </div>
+              <span className="text-[10px] font-mono text-[#C6A664]">{studentAccount.cohort}</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                onOpenAuthModal();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full py-2 bg-[#C6A664] text-[#1E3A2F] font-semibold text-xs rounded-md mb-2 text-center"
+            >
+              Get Started · Enrol as Student
+            </button>
+          )}
+
           {navLinks.map((item) => (
             <button
               key={item.view}

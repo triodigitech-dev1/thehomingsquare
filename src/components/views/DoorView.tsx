@@ -7,9 +7,16 @@ import { ArrowRight, CheckCircle } from 'lucide-react';
 interface DoorViewProps {
   onNavigate: (view: NavView) => void;
   onSelectStructure?: (structureId: string) => void;
+  onOpenAuthModal?: () => void;
+  isAuthenticated?: boolean;
 }
 
-export const DoorView: React.FC<DoorViewProps> = ({ onNavigate, onSelectStructure }) => {
+export const DoorView: React.FC<DoorViewProps> = ({
+  onNavigate,
+  onSelectStructure,
+  onOpenAuthModal,
+  isAuthenticated
+}) => {
   const [selectedGuess, setSelectedGuess] = useState<string | null>(null);
   const [hasRevealed, setHasRevealed] = useState(false);
   const [pawnSkeletonFilter, setPawnSkeletonFilter] = useState(false);
@@ -32,9 +39,20 @@ export const DoorView: React.FC<DoorViewProps> = ({ onNavigate, onSelectStructur
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#F6F1E7] text-[#262626] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto w-full space-y-8 text-center">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#F6F1E7] text-[#262626] flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto w-full space-y-7 text-center">
         
+        {/* Official Academy Emblem */}
+        <div className="flex justify-center">
+          <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-sm border border-[#C6A664]/30 bg-[#152921] p-1">
+            <img
+              src="/assets/aistudio/The_Homing_Square_Chess_Emblem_dbf19a72.png"
+              alt="The Homing Square Crest"
+              className="w-full h-full object-contain"
+            />
+          </div>
+        </div>
+
         {/* The One Question */}
         <div className="space-y-1">
           <h1 className="font-display text-3xl sm:text-4xl text-[#1E3A2F]">
@@ -116,10 +134,16 @@ export const DoorView: React.FC<DoorViewProps> = ({ onNavigate, onSelectStructur
           <div className="flex items-center justify-center gap-6 text-sm font-sans">
             <button
               type="button"
-              onClick={() => onNavigate('cockpit')}
+              onClick={() => {
+                if (!isAuthenticated && onOpenAuthModal) {
+                  onOpenAuthModal();
+                } else {
+                  onNavigate('cockpit');
+                }
+              }}
               className="text-[#1E3A2F] font-semibold hover:underline"
             >
-              Start free
+              Get Started
             </button>
             <span className="text-[#D9CFC0]" aria-hidden="true">·</span>
             <button

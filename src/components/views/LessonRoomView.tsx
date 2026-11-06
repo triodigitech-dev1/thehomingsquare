@@ -102,13 +102,20 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
         
         {/* Left Sidebar (3 cols): Course Outline */}
         <div className="lg:col-span-3 bg-[#FAF7F2] rounded-2xl p-5 border border-[#D9CFC0]/60 shadow-sm space-y-4 hidden lg:block">
-          <div className="border-b border-[#D9CFC0]/60 pb-3">
-            <span className="text-xs font-mono uppercase text-[#C6A664] tracking-wider block">
-              Curriculum Units
-            </span>
-            <span className="font-display text-sm font-semibold text-[#1E3A2F]">
-              Study Outline
-            </span>
+          <div className="border-b border-[#D9CFC0]/60 pb-3 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-mono uppercase text-[#C6A664] tracking-wider block">
+                Classroom Syllabus
+              </span>
+              <span className="font-display text-sm font-semibold text-[#1E3A2F]">
+                Study Outline
+              </span>
+            </div>
+            {progress.studentAccount?.cohort && (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#EDE6D8] text-[#1E3A2F] border border-[#D9CFC0]">
+                {progress.studentAccount.cohort.split(' ')[0]}
+              </span>
+            )}
           </div>
 
           <div className="space-y-4 max-h-[700px] overflow-y-auto pr-1 text-xs">
