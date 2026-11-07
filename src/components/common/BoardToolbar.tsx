@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RotateCcw, RefreshCw, Eye, EyeOff, Copy, Check, Volume2, VolumeX } from 'lucide-react';
 import { playWoodenClick } from '../board/ChessBoard';
+import { useToast } from './Toast';
 
 export interface BoardToolbarProps {
   fen: string;
@@ -30,12 +31,14 @@ export const BoardToolbar: React.FC<BoardToolbarProps> = ({
   className = ''
 }) => {
   const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   const handleCopyFen = async () => {
     try {
       await navigator.clipboard.writeText(fen);
       setCopied(true);
       playWoodenClick(soundEnabled);
+      toast.success('FEN Copied to Clipboard', 'Position ready for engine or study analysis');
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Fallback

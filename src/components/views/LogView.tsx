@@ -119,7 +119,7 @@ export const LogView: React.FC<LogViewProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 font-sans">
       {/* Header Banner */}
       <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -492,7 +492,7 @@ export const LogView: React.FC<LogViewProps> = ({
 
         {/* Right Active Game Detail (8 cols) */}
         {activeGame && (
-          <div className="lg:col-span-8 bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm space-y-6">
+          <div className="lg:col-span-8 bg-[#FAF7F2] rounded-2xl p-6 sm:p-7 border border-[#D9CFC0]/70 shadow-sm space-y-5 max-h-[720px] overflow-y-auto pr-2">
             
             {/* Game Header */}
             <div className="border-b border-[#D9CFC0]/60 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

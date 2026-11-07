@@ -6,6 +6,7 @@ import { NavView } from '../layout/Header';
 import { StudyCard } from '../common/StudyCard';
 import { BoardToolbar } from '../common/BoardToolbar';
 import { ScholarGamificationCard } from '../common/ScholarGamificationCard';
+import { useToast } from '../common/Toast';
 import {
   CheckCircle2,
   Circle,
@@ -43,6 +44,7 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
   onToggleSound,
   onUpdatePlan
 }) => {
+  const { toast } = useToast();
   const [boardFlipped, setBoardFlipped] = useState(false);
   const [pawnSkeletonMode, setPawnSkeletonMode] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
@@ -83,13 +85,19 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
   const tasksPercent = Math.round((completedTasksCount / Math.max(1, progress.dailyTasks.length)) * 100);
 
   const handleTaskClick = (taskId: string) => {
+    const task = progress.dailyTasks.find((t) => t.id === taskId);
     playWoodenClick(progress.soundEnabled);
     onUpdateTasks(taskId);
+    if (task && !task.completed) {
+      toast.success('Task Completed (+50 XP)', task.text);
+    }
   };
 
   const handlePathSwitch = (pCode: ConversionPath) => {
     playWoodenClick(progress.soundEnabled);
     onSetPath(pCode);
+    const pObj = CONVERSION_PATHS.find((p) => p.path === pCode);
+    toast.info(`Switched to Path ${pCode}`, pObj?.name || 'Conversion track updated');
   };
 
   const handleSavePlan = (e: React.FormEvent) => {
@@ -102,10 +110,11 @@ export const CockpitView: React.FC<CockpitViewProps> = ({
     }
     setIsEditingPlan(false);
     playChimeSound(progress.soundEnabled);
+    toast.success('One-Sentence Plan Committed', planDraft.trim());
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 font-sans">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 font-sans">
       
       {/* Top Banner: Dual-Persona Switcher & Mode Breadcrumb */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white rounded-2xl p-4 border border-[#D9CFC0] shadow-xs">

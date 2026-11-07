@@ -163,7 +163,7 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-sans">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 font-sans">
       
       {/* Header Banner with Session Stats & Timer */}
       <StudyCard
@@ -232,15 +232,47 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
         </div>
       </StudyCard>
 
-      {/* Main Drill Arena */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* Unified Studio Workstation Frame (Dashboard within Dashboard) */}
+      <div className="bg-[#FAF7F2] rounded-2xl border border-[#D9CFC0] shadow-sm overflow-hidden">
         
-        {/* Left Column: Board with Interactive Toolbar (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col items-center">
-          <StudyCard
-            kicker={activeDrill.category}
-            title={`Card ${(currentIndex % filteredDrills.length) + 1} of ${filteredDrills.length}`}
-            actions={
+        {/* Workstation Header Ribbon */}
+        <div className="px-5 py-3.5 bg-linear-to-r from-[#1E3A2F] via-[#244336] to-[#1E3A2F] text-[#F6F1E7] flex flex-wrap items-center justify-between gap-3 border-b border-[#C6A664]/30">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-black/20 border border-[#C6A664]/40 flex items-center justify-center text-[#C6A664]">
+              <Flame className="w-4 h-4 text-[#C6A664]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#C6A664] font-semibold">
+                  Tactile Perception Console
+                </span>
+                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/30 text-[#DFCA95]">
+                  {activeDrill.category}
+                </span>
+              </div>
+              <h2 className="font-display text-sm sm:text-base font-semibold text-[#F6F1E7]">
+                Drill Card {(currentIndex % filteredDrills.length) + 1} of {filteredDrills.length}
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs font-mono">
+            <span className="text-[#DFCA95]">Shortcuts:</span>
+            <span className="bg-black/30 px-2 py-0.5 rounded text-[#F6F1E7] border border-white/10 text-[11px]">
+              Keys 1–4 to Answer · Space for Next
+            </span>
+          </div>
+        </div>
+
+        {/* 2-Partition Studio Arena */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[#D9CFC0]">
+          
+          {/* Left Partition (5 cols): Analysis Board Stage */}
+          <div className="lg:col-span-5 p-5 flex flex-col items-center justify-between space-y-4 bg-white/40">
+            <div className="w-full flex items-center justify-between border-b border-[#D9CFC0] pb-2.5">
+              <span className="text-xs font-mono uppercase text-[#C6A664] font-semibold">
+                Perception Position
+              </span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -259,9 +291,8 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
-            }
-            className="w-full flex flex-col items-center"
-          >
+            </div>
+
             <div className="w-full flex justify-center py-1">
               <ChessBoard
                 initialFen={activeDrill.fen}
@@ -279,86 +310,97 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
               onToggleFlip={() => setBoardFlipped(!boardFlipped)}
               pawnSkeletonOnly={pawnSkeletonMode}
               onTogglePawnSkeleton={() => setPawnSkeletonMode(!pawnSkeletonMode)}
-              className="mt-3 max-w-sm"
+              className="mt-2 max-w-sm"
             />
-          </StudyCard>
-        </div>
 
-        {/* Right Column: Challenge & Response Options (7 cols) */}
-        <div className="lg:col-span-7">
-          <StudyCard
-            kicker="Perception Drill"
-            title={activeDrill.prompt}
-            subtitle="Press keys 1–4 to answer immediately, or click an option below."
-          >
-            <div className="space-y-3">
-              {activeDrill.options?.map((opt, idx) => {
-                const isSelected = selectedOption === opt;
-                let btnStyle =
-                  'bg-white border-[#D9CFC0] text-[#262626] hover:border-[#1E3A2F]/60 hover:bg-[#FAF7F2]';
+            <div className="w-full pt-1 flex items-center justify-between text-xs font-mono text-[#595959]">
+              <span>Homing Square: c5</span>
+              <span>Category: {activeDrill.type}</span>
+            </div>
+          </div>
 
-                if (hasEvaluated) {
-                  if (opt === activeDrill.solution) {
-                    btnStyle = 'bg-[#1E3A2F] border-[#1E3A2F] text-[#F6F1E7] ring-1 ring-[#C6A664] shadow-xs';
-                  } else if (isSelected && !isCorrect) {
-                    btnStyle = 'bg-rose-50 border-rose-300 text-rose-900';
-                  } else {
-                    btnStyle = 'bg-[#FAF7F2]/60 border-[#D9CFC0]/40 text-[#595959] opacity-50';
+          {/* Right Partition (7 cols): Challenge & Response Desk */}
+          <div className="lg:col-span-7 p-6 flex flex-col justify-between space-y-4 bg-white/70">
+            <div className="space-y-4">
+              <div className="border-b border-[#D9CFC0] pb-3">
+                <span className="text-[10px] font-mono uppercase text-[#C6A664] font-semibold block">
+                  Perception Challenge
+                </span>
+                <h3 className="font-display text-base sm:text-lg text-[#1E3A2F] font-semibold leading-snug">
+                  {activeDrill.prompt}
+                </h3>
+              </div>
+
+              {/* Options list with internal scroll */}
+              <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
+                {activeDrill.options?.map((opt, idx) => {
+                  const isSelected = selectedOption === opt;
+                  let btnStyle =
+                    'bg-white border-[#D9CFC0] text-[#262626] hover:border-[#1E3A2F]/60 hover:bg-[#FAF7F2]';
+
+                  if (hasEvaluated) {
+                    if (opt === activeDrill.solution) {
+                      btnStyle = 'bg-[#1E3A2F] border-[#1E3A2F] text-[#F6F1E7] ring-1 ring-[#C6A664] shadow-xs';
+                    } else if (isSelected && !isCorrect) {
+                      btnStyle = 'bg-rose-50 border-rose-300 text-rose-900';
+                    } else {
+                      btnStyle = 'bg-[#FAF7F2]/60 border-[#D9CFC0]/40 text-[#595959] opacity-50';
+                    }
+                  } else if (isSelected) {
+                    btnStyle = 'bg-[#EDE6D8] border-[#1E3A2F] text-[#1E3A2F]';
                   }
-                } else if (isSelected) {
-                  btnStyle = 'bg-[#EDE6D8] border-[#1E3A2F] text-[#1E3A2F]';
-                }
 
-                return (
-                  <button
-                    key={`${opt}-${idx}`}
-                    type="button"
-                    onClick={() => handleSelectOption(opt)}
-                    className={`w-full text-left p-3.5 sm:p-4 rounded-xl border text-xs sm:text-sm font-sans transition-all flex items-start gap-3 ${btnStyle}`}
-                  >
-                    <span
-                      className={`w-5 h-5 rounded-md flex items-center justify-center font-mono text-xs font-semibold shrink-0 mt-0.5 ${
-                        hasEvaluated && opt === activeDrill.solution
-                          ? 'bg-[#C6A664] text-[#1E3A2F]'
-                          : 'bg-[#EDE6D8] text-[#595959]'
-                      }`}
+                  return (
+                    <button
+                      key={`${opt}-${idx}`}
+                      type="button"
+                      onClick={() => handleSelectOption(opt)}
+                      className={`w-full text-left p-3 sm:p-3.5 rounded-xl border text-xs sm:text-sm font-sans transition-all flex items-start gap-3 shadow-xs ${btnStyle}`}
                     >
-                      {idx + 1}
-                    </span>
-                    <span className="flex-1 leading-snug">{opt}</span>
-                  </button>
-                );
-              })}
+                      <span
+                        className={`w-5 h-5 rounded-md flex items-center justify-center font-mono text-xs font-semibold shrink-0 mt-0.5 ${
+                          hasEvaluated && opt === activeDrill.solution
+                            ? 'bg-[#C6A664] text-[#1E3A2F]'
+                            : 'bg-[#EDE6D8] text-[#595959]'
+                        }`}
+                      >
+                        {idx + 1}
+                      </span>
+                      <span className="flex-1 leading-snug">{opt}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Explanation & Feedback */}
+              {hasEvaluated && (
+                <div
+                  className={`p-4 rounded-xl border text-xs space-y-2 animate-fadeIn ${
+                    isCorrect
+                      ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                      : 'bg-rose-50/80 border-rose-200 text-rose-950'
+                  }`}
+                >
+                  <div className="font-semibold flex items-center gap-1.5 font-display text-sm">
+                    {isCorrect ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                        <span>Verified Precision</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-4 h-4 text-rose-700" />
+                        <span>Perception Error</span>
+                      </>
+                    )}
+                  </div>
+                  <p className="leading-relaxed font-sans">{activeDrill.explanation}</p>
+                </div>
+              )}
             </div>
 
-            {/* Explanation & Solution */}
-            {hasEvaluated && (
-              <div
-                className={`mt-5 p-4 rounded-xl border text-xs space-y-2 animate-fadeIn ${
-                  isCorrect
-                    ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
-                    : 'bg-rose-50/80 border-rose-200 text-rose-950'
-                }`}
-              >
-                <div className="font-semibold flex items-center gap-1.5 font-display text-sm">
-                  {isCorrect ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-700" />
-                      <span>Verified Precision</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="w-4 h-4 text-rose-700" />
-                      <span>Perception Error</span>
-                    </>
-                  )}
-                </div>
-                <p className="leading-relaxed font-sans">{activeDrill.explanation}</p>
-              </div>
-            )}
-
             {/* Next Drill Footer */}
-            <div className="mt-5 pt-3 flex items-center justify-between border-t border-[#D9CFC0]/60">
+            <div className="pt-3 flex items-center justify-between border-t border-[#D9CFC0]">
               <span className="text-[11px] font-mono text-[#595959]">
                 Tip: Press <kbd className="px-1.5 py-0.5 bg-[#EDE6D8] rounded border border-[#D9CFC0]">Space</kbd> or <kbd className="px-1.5 py-0.5 bg-[#EDE6D8] rounded border border-[#D9CFC0]">→</kbd> for next
               </span>
@@ -372,7 +414,8 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
                 <ArrowRight className="w-3.5 h-3.5 text-[#C6A664]" />
               </button>
             </div>
-          </StudyCard>
+          </div>
+
         </div>
 
       </div>

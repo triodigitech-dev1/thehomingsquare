@@ -3,6 +3,7 @@ import { PAWN_STRUCTURES } from '../../data/structures';
 import { NavView } from '../layout/Header';
 import { StudyCard } from '../common/StudyCard';
 import { playWoodenClick, playChimeSound } from '../board/ChessBoard';
+import { useToast } from '../common/Toast';
 import {
   MessageSquare,
   Users,
@@ -58,6 +59,7 @@ export const CommonsView: React.FC<CommonsViewProps> = ({
   onSelectStructure,
   soundEnabled = true
 }) => {
+  const { toast } = useToast();
   const [activeZoneTab, setActiveZoneTab] = useState<'study_together' | 'partners' | 'circles'>('study_together');
   const [selectedCircle, setSelectedCircle] = useState<string>('carlsbad');
   const [newPostContent, setNewPostContent] = useState('');
@@ -272,6 +274,7 @@ export const CommonsView: React.FC<CommonsViewProps> = ({
 
     setNewPostContent('');
     playChimeSound(soundEnabled);
+    toast.success('Insight Published to Agora', 'Synchronized with your active cohort study circle');
   };
 
   const handleLikePost = (postId: string) => {
@@ -297,10 +300,12 @@ export const CommonsView: React.FC<CommonsViewProps> = ({
   const handleRequestPartner = (partnerId: string) => {
     setPartnerRequestedId(partnerId);
     playChimeSound(soundEnabled);
+    const partner = availablePartners.find((p) => p.id === partnerId);
+    toast.milestone('5-Question Audit Exchange Scheduled!', `Confirmed session with ${partner?.name || 'cohort peer'}`);
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-sans">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 font-sans">
       
       {/* Commons Hero Header */}
       <StudyCard

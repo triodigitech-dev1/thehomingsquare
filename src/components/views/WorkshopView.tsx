@@ -250,7 +250,7 @@ export const WorkshopView: React.FC<WorkshopViewProps> = ({ onNavigate, soundEna
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 font-sans">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 font-sans">
       
       {/* Top Banner: Dual-Persona Switcher & Mode Breadcrumb */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white rounded-2xl p-4 border border-[#D9CFC0] shadow-xs">

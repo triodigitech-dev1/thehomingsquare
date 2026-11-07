@@ -6,6 +6,7 @@ import { NavView } from '../layout/Header';
 import { StudyCard } from '../common/StudyCard';
 import { calculateScholarXP, getScholarRank, getScholarBadges } from '../../utils/gamification';
 import { playWoodenClick, playChimeSound, playMilestoneFanfare } from '../board/ChessBoard';
+import { useToast } from '../common/Toast';
 import {
   Shield,
   Award,
@@ -35,6 +36,7 @@ export const PassportView: React.FC<PassportViewProps> = ({
   soundEnabled = true
 }) => {
   const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
   const totalUnits = CURRICULUM_CHAPTERS.flatMap((c) => c.units).length;
   const completedUnits = progress.completedUnitIds.length;
   const gauntletCount = progress.loggedGames.length;
@@ -56,6 +58,7 @@ Verification: Homecoming Standard Demonstrable`;
 
     navigator.clipboard.writeText(summary);
     playChimeSound(soundEnabled);
+    toast.milestone('Academic Passport Copied', 'Official record copied to clipboard');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -66,7 +69,7 @@ Verification: Homecoming Standard Demonstrable`;
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 font-sans">
       {/* Passport Book Cover Header */}
       <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-10 border-2 border-[#1E3A2F]/20 shadow-md space-y-6">
         
@@ -212,67 +215,83 @@ Verification: Homecoming Standard Demonstrable`;
           </div>
         </div>
 
-        {/* Academic Badges Ribbon */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono uppercase text-[#C6A664] tracking-wider font-semibold">
-              Conferred Medals & Endorsements
-            </span>
-            <span className="text-xs font-mono text-[#595959]">
-              {badges.filter((b) => b.isUnlocked).length} of {badges.length} Unlocked
-            </span>
-          </div>
+        {/* Academic Credentials Partition (Dual-Pane Dossier: Medals & Mastered Structures) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-[#D9CFC0]/60">
+          
+          {/* Left Partition: Conferred Medals */}
+          <div className="bg-white rounded-xl p-4 border border-[#D9CFC0] space-y-3 shadow-xs">
+            <div className="flex items-center justify-between border-b border-[#D9CFC0]/60 pb-2">
+              <span className="text-xs font-mono uppercase text-[#C6A664] tracking-wider font-semibold">
+                Conferred Medals & Badges
+              </span>
+              <span className="text-xs font-mono text-[#595959]">
+                {badges.filter((b) => b.isUnlocked).length} / {badges.length} Unlocked
+              </span>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {badges.map((b) => (
-              <div
-                key={b.id}
-                className={`p-4 rounded-xl border transition-all flex items-start gap-3 ${
-                  b.isUnlocked
-                    ? 'bg-white border-[#C6A664] shadow-xs'
-                    : 'bg-[#EDE6D8]/50 border-[#D9CFC0] opacity-50'
-                }`}
-              >
-                <div className="text-3xl shrink-0 p-1 bg-[#FAF7F2] rounded-lg border border-[#D9CFC0]/40">
-                  {b.icon}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-display font-semibold text-xs text-[#1E3A2F] truncate">
-                      {b.title}
-                    </span>
-                    {b.isUnlocked && (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    )}
+            <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
+              {badges.map((b) => (
+                <div
+                  key={b.id}
+                  className={`p-3 rounded-xl border transition-all flex items-start gap-3 ${
+                    b.isUnlocked
+                      ? 'bg-[#FAF7F2] border-[#C6A664] shadow-xs'
+                      : 'bg-[#EDE6D8]/40 border-[#D9CFC0] opacity-50'
+                  }`}
+                >
+                  <div className="text-2xl shrink-0 p-1 bg-white rounded-lg border border-[#D9CFC0]/40">
+                    {b.icon}
                   </div>
-                  <p className="text-[11px] text-[#595959] mt-0.5 line-clamp-2 leading-tight font-sans">
-                    {b.description}
-                  </p>
-                  <span className="text-[10px] font-mono text-[#8C7A6B] block mt-1">
-                    {b.isUnlocked ? 'Conferred · Active' : `${b.progressPercent}% to Unlock`}
-                  </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-display font-semibold text-xs text-[#1E3A2F] truncate">
+                        {b.title}
+                      </span>
+                      {b.isUnlocked && (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-[#595959] mt-0.5 line-clamp-2 leading-tight font-sans">
+                      {b.description}
+                    </p>
+                    <span className="text-[10px] font-mono text-[#8C7A6B] block mt-1">
+                      {b.isUnlocked ? 'Conferred · Active' : `${b.progressPercent}% to Unlock`}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Structures Visited Stamped Grid */}
-        <div className="space-y-3 pt-2 border-t border-[#D9CFC0]/60">
-          <span className="text-xs font-mono uppercase text-[#C6A664] tracking-wider block font-semibold">
-            Pawn Structures Mastered & Logged
-          </span>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            {PAWN_STRUCTURES.map((struct) => (
-              <div
-                key={struct.id}
-                className="p-3 bg-white rounded-lg border border-[#D9CFC0] flex items-center justify-between shadow-xs"
-              >
-                <span className="font-medium text-[#262626] truncate">{struct.name}</span>
-                <CheckCircle2 className="w-4 h-4 text-[#1E3A2F] shrink-0 ml-1" />
-              </div>
-            ))}
+          {/* Right Partition: Structures Mastered */}
+          <div className="bg-white rounded-xl p-4 border border-[#D9CFC0] space-y-3 shadow-xs">
+            <div className="flex items-center justify-between border-b border-[#D9CFC0]/60 pb-2">
+              <span className="text-xs font-mono uppercase text-[#C6A664] tracking-wider font-semibold">
+                Pawn Structures Mastered & Logged
+              </span>
+              <span className="text-xs font-mono text-[#595959]">
+                {PAWN_STRUCTURES.length} Structures
+              </span>
+            </div>
+
+            <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1 text-xs">
+              {PAWN_STRUCTURES.map((struct) => (
+                <div
+                  key={struct.id}
+                  className="p-2.5 bg-[#FAF7F2] rounded-lg border border-[#D9CFC0] flex items-center justify-between shadow-2xs"
+                >
+                  <div className="min-w-0">
+                    <span className="font-medium text-[#262626] block truncate">{struct.name}</span>
+                    <span className="text-[10px] font-mono text-[#8C7A6B] block">
+                      {struct.category} · Outposts: {struct.keyOutposts.slice(0, 2).join(', ')}
+                    </span>
+                  </div>
+                  <CheckCircle2 className="w-4 h-4 text-[#1E3A2F] shrink-0 ml-2" />
+                </div>
+              ))}
+            </div>
           </div>
+
         </div>
 
         {/* Graduation Status Card */}

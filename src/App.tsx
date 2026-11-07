@@ -25,10 +25,13 @@ import { CURRICULUM_CHAPTERS } from './data/curriculum';
 import { PAWN_STRUCTURES } from './data/structures';
 import { INITIAL_LOGGED_GAMES } from './data/loggedGames';
 import { Download, Compass, Lock } from 'lucide-react';
+import { ToastProvider, useToast } from './components/common/Toast';
+import { StudioHud } from './components/common/StudioHud';
 
 const STORAGE_KEY = 'homing_square_progress_v1';
 
-export default function App() {
+function AppContent() {
+  const { toast } = useToast();
   const [currentView, setCurrentView] = useState<NavView>('door');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -76,7 +79,8 @@ export default function App() {
         cohort: 'Cohort 01 (Active Term)',
         tier: 'Mastery (Elo 1600–2200)',
         enrolledDate: '2026-03-01',
-        status: 'Active Scholar'
+        status: 'Active Scholar',
+        role: 'student'
       }
     };
   });
@@ -96,6 +100,7 @@ export default function App() {
       studentAccount: account,
       studentName: account.fullName
     }));
+    toast.milestone('Welcome Scholar!', `Enrolled in ${account.cohort} · ${account.tier}`);
     // Once enrolled or signed in, welcome them into the classroom
     setCurrentView('lesson');
   };
@@ -108,6 +113,7 @@ export default function App() {
       currentStructureId: struct.id,
       oneSentencePlan: struct.oneSentencePlan
     }));
+    toast.info('Active Pawn Structure', struct.name);
   };
 
   const handleToggleTask = (taskId: string) => {
@@ -134,6 +140,7 @@ export default function App() {
         completedUnitIds: [...prev.completedUnitIds, unitId]
       };
     });
+    toast.success('Curriculum Checkpoint Passed', 'Recorded to your academic passport');
   };
 
   const handleIncrementDrills = () => {
@@ -148,6 +155,7 @@ export default function App() {
       ...prev,
       loggedGames: [game, ...prev.loggedGames]
     }));
+    toast.success('Gauntlet Game Audited', `${game.title} logged with 5-question protocol`);
   };
 
   const handleUpdateRubric = (phaseId: string, score: 'Yes' | 'Partly' | 'No') => {
@@ -158,6 +166,7 @@ export default function App() {
         [phaseId]: score
       }
     }));
+    toast.info('Rubric Score Updated', `${score} recorded for ${phaseId}`);
   };
 
   const handleUpdateStudentName = (name: string) => {
@@ -168,6 +177,7 @@ export default function App() {
         ? { ...prev.studentAccount, fullName: name }
         : undefined
     }));
+    toast.info('Scholar Record Updated', name);
   };
 
   const handleToggleSound = () => {
@@ -191,6 +201,17 @@ export default function App() {
         isSidebarOpen={isSidebarOpen}
       />
 
+      {/* Confined Studio Quick Action HUD */}
+      <StudioHud
+        currentView={currentView}
+        onNavigate={setCurrentView}
+        progress={progress}
+        onSelectStructure={handleSelectStructure}
+        onSetPath={handleSetPath}
+        onToggleSound={handleToggleSound}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+      />
+
       {/* Permissions-Based Academy Sidebar Drawer */}
       <AcademySidebar
         isOpen={isSidebarOpen}
@@ -210,6 +231,7 @@ export default function App() {
           }));
           setIsSidebarOpen(false);
           setCurrentView('door');
+          toast.info('Signed Out', 'Returned to the threshold');
         }}
       />
 
@@ -217,7 +239,7 @@ export default function App() {
       {!progress.studentAccount?.isAuthenticated &&
         ['cockpit', 'lesson', 'drills', 'log', 'mastery', 'passport'].includes(currentView) && (
           <div className="bg-[#1E3A2F] text-[#F6F1E7] border-b border-[#C6A664]/30 px-4 py-2.5 shadow-xs">
-            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2 text-center sm:text-left">
                 <span className="px-2 py-0.5 rounded bg-[#C6A664]/20 text-[#DFCA95] font-mono text-[10px] uppercase font-semibold border border-[#C6A664]/40">
                   Guest Preview
@@ -264,6 +286,7 @@ export default function App() {
             progress={progress}
             onSelectUnit={setCurrentUnit}
             onNavigate={setCurrentView}
+            soundEnabled={progress.soundEnabled}
           />
         )}
 
@@ -300,6 +323,7 @@ export default function App() {
             onUpdateRubric={handleUpdateRubric}
             onUpdateStudentName={handleUpdateStudentName}
             onNavigate={setCurrentView}
+            soundEnabled={progress.soundEnabled}
           />
         )}
 
@@ -350,6 +374,7 @@ export default function App() {
                       role: 'admin'
                     }
               }));
+              toast.milestone('Maintainer Clearance Granted', 'Classified curriculum archives unlocked');
             }}
           />
         )}
@@ -448,5 +473,13 @@ export default function App() {
       {/* Vercel Web Analytics */}
       <Analytics />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
   );
 }

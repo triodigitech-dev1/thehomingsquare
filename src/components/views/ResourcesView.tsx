@@ -5,6 +5,7 @@ import { StudyCard } from '../common/StudyCard';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
 import { playWoodenClick } from '../board/ChessBoard';
 import { StudentAccount } from '../../types/chess';
+import { useToast } from '../common/Toast';
 import {
   Download,
   FileText,
@@ -38,6 +39,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
   onSwitchToAdmin
 }) => {
   const isAdmin = studentAccount?.role === 'admin';
+  const { toast } = useToast();
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -160,6 +162,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
     if (!res.markdownContent) return;
     navigator.clipboard.writeText(res.markdownContent);
     playWoodenClick(soundEnabled);
+    toast.success('Markdown Source Copied', res.title);
     setCopiedId(res.id);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -179,7 +182,7 @@ export const ResourcesView: React.FC<ResourcesViewProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 font-sans">
       {/* Header Banner */}
       <StudyCard
         badge="Golden Academy Archive"

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle2, AlertCircle, ArrowRight, RotateCcw } from 'lucide-react';
 import { UnitCheckpoint } from '../../types/chess';
 import { playWoodenClick, playChimeSound, playFailureSound } from '../board/ChessBoard';
+import { useToast } from './Toast';
 
 export interface InteractiveCheckpointProps {
   checkpoint: UnitCheckpoint;
@@ -25,6 +26,7 @@ export const InteractiveCheckpoint: React.FC<InteractiveCheckpointProps> = ({
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const { toast } = useToast();
 
   // Reset when question changes
   useEffect(() => {
@@ -55,9 +57,11 @@ export const InteractiveCheckpoint: React.FC<InteractiveCheckpointProps> = ({
     setIsCorrect(correct);
     if (correct) {
       playChimeSound(soundEnabled);
+      toast.milestone('Checkpoint Verified (+75 XP)', checkpoint.takeaway);
       if (onSuccess) onSuccess();
     } else {
       playFailureSound(soundEnabled);
+      toast.warning('Structural Inaccuracy', 'Consult the board skeleton and try again');
     }
   };
 
