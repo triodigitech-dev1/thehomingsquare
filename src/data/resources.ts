@@ -92,7 +92,7 @@ Source: https://github.com/syzygy1/tb`
     title: 'Structure-First Chess Mastery: Complete Lifespan Curriculum Guide',
     description: 'Course Work Contents Guide — Final Enriched Edition. Elo 1000–2700+, Prerequisite Chapter + 8 Main Chapters + Capstone Unit 8.2 + Appendix.',
     format: 'PDF',
-    fileUrl: '/assets/aistudio/Structure_First_Chess_Mastery_31a83b4c.pdf'
+    fileUrl: '/assets/chessbook/Chess_Textbook_Visual_Placement_Edition.pdf'
   },
   {
     id: 'res_md_manifesto',

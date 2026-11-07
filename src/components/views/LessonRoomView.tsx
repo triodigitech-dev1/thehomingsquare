@@ -7,6 +7,7 @@ import { NavView } from '../layout/Header';
 import { StudyCard } from '../common/StudyCard';
 import { BoardToolbar } from '../common/BoardToolbar';
 import { InteractiveCheckpoint } from '../common/InteractiveCheckpoint';
+import { getVisualPlaceholder } from '../../data/visualPlaceholders';
 import {
   CheckCircle2,
   ArrowLeft,
@@ -56,6 +57,7 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
   // Find structure associated with unit if any, or default to Carlsbad
   const associatedStructure =
     PAWN_STRUCTURES.find((s) => s.id === currentUnit.structureId) || PAWN_STRUCTURES[0];
+  const visualPlaceholder = getVisualPlaceholder(currentUnit.unitCode, currentUnit.title);
 
   // Flatten units for Prev/Next navigation
   const allUnits = CURRICULUM_CHAPTERS.flatMap((c) => c.units);
@@ -408,29 +410,25 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
                     </div>
                   </div>
 
-                  {(currentUnit.unitCode === 'P1' ||
-                    currentUnit.unitCode === 'P2' ||
-                    currentUnit.unitCode === '1.3' ||
-                    currentUnit.unitCode === '2.5') && (
-                    <figure className="rounded-xl overflow-hidden border border-[#D9CFC0] bg-[#152921] shadow-xs">
-                      <img
-                        src={
-                          currentUnit.unitCode === 'P1' || currentUnit.unitCode === 'P2'
-                            ? '/assets/chessbook/images/2d.png'
-                            : '/assets/chessbook/images/3d.png'
-                        }
-                        alt={
-                          currentUnit.unitCode === 'P1' || currentUnit.unitCode === 'P2'
-                            ? 'Chessboard and pieces reference for board geometry and movement'
-                            : 'Three-dimensional chessboard reference for spatial perception'
-                        }
-                        className="w-full max-h-52 object-contain"
-                      />
-                      <figcaption className="px-3 py-2 text-[10px] leading-relaxed text-[#D9CFC0] font-mono">
-                        Visual reference · Lichess Chessground · GPL-3.0
-                      </figcaption>
-                    </figure>
-                  )}
+                  <figure className="rounded-xl border border-dashed border-[#C6A664] bg-[#F5EFE6] shadow-xs">
+                    <div className="min-h-36 p-4 flex flex-col justify-center gap-2">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#8C6D28] font-semibold">
+                        Image placement note
+                      </span>
+                      <h3 className="font-display text-sm font-semibold text-[#1E3A2F]">
+                        {visualPlaceholder.title}
+                      </h3>
+                      <p className="text-xs leading-relaxed text-[#595959]">
+                        {visualPlaceholder.description}
+                      </p>
+                      <p className="text-[10px] leading-relaxed text-[#8C7A6B] font-mono border-t border-[#D9CFC0] pt-2">
+                        Asset to source: {visualPlaceholder.plannedAsset}
+                      </p>
+                    </div>
+                    <figcaption className="px-4 py-2 text-[10px] leading-relaxed text-[#8C7A6B] font-mono border-t border-[#D9CFC0]">
+                      Placeholder only — replace with the verified downloaded image before publication.
+                    </figcaption>
+                  </figure>
 
                   {/* Reading Paragraphs with Bounded Scroll */}
                   <div className="space-y-2.5 max-h-[310px] overflow-y-auto pr-1 text-xs text-[#262626] leading-relaxed font-sans">
