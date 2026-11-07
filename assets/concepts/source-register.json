@@ -1,0 +1,158 @@
+{
+  "purpose": "Research and asset register for every major concept identified in the supplied chess manuscript.",
+  "downloaded_assets": {
+    "opening_data": {
+      "path": "assets/opening-data",
+      "source": "https://github.com/lichess-org/chess-openings",
+      "license": "CC0 Public Domain Dedication",
+      "covers": ["opening families", "ECO", "PGN", "FEN", "UCI", "opening structures"]
+    },
+    "board_reference_images": {
+      "paths": ["assets/images/chessground-2d.png", "assets/images/chessground-3d.png"],
+      "source": "https://github.com/lichess-org/chessground",
+      "license": "GPL-3.0",
+      "covers": ["board geometry", "piece identification", "visual board orientation"]
+    },
+    "game_database_documentation": {
+      "path": "assets/research/lichess-database-README.md",
+      "source": "https://github.com/lichess-org/database",
+      "license": "See upstream repository terms",
+      "covers": ["PGN research", "game statistics", "opening research", "model games"]
+    },
+    "tablebase_documentation": {
+      "path": "assets/research/syzygy-tablebases-README.md",
+      "source": "https://github.com/syzygy1/tb",
+      "license": "See upstream repository terms",
+      "covers": ["king and pawn endings", "rook endings", "minor-piece endings", "perfect-play verification"]
+    }
+  },
+  "research_sources": [
+    {
+      "name": "FIDE Laws of Chess",
+      "url": "https://handbook.fide.com/chapter/E012023",
+      "status": "link-only",
+      "covers": ["piece movement", "check", "checkmate", "stalemate", "draws", "castling", "en passant", "promotion", "touch-move", "clock", "notation", "competition etiquette"]
+    },
+    {
+      "name": "Lichess open database",
+      "url": "https://database.lichess.org/",
+      "status": "link-only",
+      "covers": ["opening statistics", "master-game comparison", "game samples", "rating filters", "time-control filters"]
+    },
+    {
+      "name": "Lichess puzzle database",
+      "url": "https://database.lichess.org/#puzzles",
+      "status": "link-only",
+      "license": "CC0 according to the source documentation",
+      "covers": ["fork", "pin", "skewer", "discovered attack", "double check", "deflection", "decoy", "overload", "removing the defender", "back-rank mate", "smothered mate", "mate in one", "mate in two", "mate in three"]
+    },
+    {
+      "name": "Lichess Opening Explorer",
+      "url": "https://lichess.org/analysis#explorer",
+      "status": "link-only",
+      "covers": ["opening move frequencies", "ECO", "result statistics", "rating bands", "masters", "pawn structures"]
+    },
+    {
+      "name": "The Week in Chess archive",
+      "url": "https://theweekinchess.com/",
+      "status": "link-only",
+      "covers": ["current tournaments", "professional PGNs", "opening trends", "annotated event context"]
+    },
+    {
+      "name": "ChessBase",
+      "url": "https://en.chessbase.com/",
+      "status": "permission-or-licence-check-required",
+      "covers": ["annotated games", "strategy", "tactics", "endgames", "history", "pawn-structure search", "professional commentary"]
+    },
+    {
+      "name": "ChessBase pawn-structure support",
+      "url": "https://en.chessbase.com/support-kb/content/details/1149/Knowing_your_pawn_structures",
+      "status": "permission-or-licence-check-required",
+      "covers": ["Carlsbad", "IQP", "hanging pawns", "structure search", "model games"]
+    },
+    {
+      "name": "Chess.com pawn-structure lessons",
+      "url": "https://www.chess.com/lessons/every-pawn-structure-explained",
+      "status": "permission-or-licence-check-required",
+      "covers": ["Carlsbad", "IQP", "hanging pawns", "hedgehog", "pawn-chain plans"]
+    },
+    {
+      "name": "Chess tactical motifs glossary",
+      "url": "https://www.chessworld.net/chessclubs/openingguide/chess-tactics-glossary.asp",
+      "status": "link-only",
+      "covers": ["fork", "pin", "skewer", "discovered attack", "deflection", "decoy", "overload", "interference", "mating patterns"]
+    },
+    {
+      "name": "Lichess tablebase",
+      "url": "https://lichess.org/tablebase",
+      "status": "link-only",
+      "covers": ["WDL", "DTZ", "king activity", "opposition", "zugzwang", "rook endings", "seven-piece verification"]
+    },
+    {
+      "name": "Syzygy tablebases",
+      "url": "https://github.com/syzygy1/tb",
+      "status": "link-only",
+      "covers": ["WDL", "DTZ", "50-move rule", "perfect endgame verification"]
+    },
+    {
+      "name": "Chess expertise research",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4361603/",
+      "status": "research-link",
+      "covers": ["chunking", "pattern recognition", "expert memory", "visualisation", "skill differences"]
+    },
+    {
+      "name": "Frontiers chess perception research",
+      "url": "https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2022.986787/full",
+      "status": "research-link",
+      "covers": ["eye movements", "perception", "expertise", "visuocognitive performance"]
+    },
+    {
+      "name": "FIDE ratings database",
+      "url": "https://ratings.fide.com/",
+      "status": "link-only",
+      "covers": ["Elo", "rating history", "titles", "player records", "historical comparisons"]
+    },
+    {
+      "name": "FIDE World Championship archive",
+      "url": "https://museum.fide.com/",
+      "status": "link-only",
+      "covers": ["world champions", "title matches", "historical context", "championship games"]
+    },
+    {
+      "name": "Lichess World Championship studies",
+      "url": "https://lichess.org/page/world-championships",
+      "status": "link-only",
+      "covers": ["championship games", "PGN", "match history", "interactive replay"]
+    },
+    {
+      "name": "Wikimedia Commons chess media",
+      "url": "https://commons.wikimedia.org/wiki/Category:Chess",
+      "status": "file-level-license-check-required",
+      "covers": ["boards", "pieces", "players", "historical photographs", "diagrams", "art"]
+    },
+    {
+      "name": "Creative Commons Search",
+      "url": "https://search.creativecommons.org/?search",
+      "status": "file-level-license-check-required",
+      "covers": ["open photographs", "historical images", "illustrations", "visual references"]
+    },
+    {
+      "name": "Picryl public-domain chess media",
+      "url": "https://picryl.com/topics/chessboard",
+      "status": "file-level-license-check-required",
+      "covers": ["public-domain chess photographs", "historical images", "boards", "pieces"]
+    }
+  ],
+  "manuscript_concept_groups": {
+    "prerequisite": ["rules", "board geometry", "piece movement", "special moves", "check", "checkmate", "stalemate", "draws", "tactical motifs", "mating patterns", "clock", "notation", "etiquette"],
+    "chapter_1": ["expertise", "chunking", "memory", "neuroscience", "spatial intelligence", "psychology", "decision making", "super-GM performance"],
+    "chapter_2": ["pawn structures", "Carlsbad", "IQP", "hanging pawns", "pawn chains", "passed pawns", "weaknesses", "imbalances", "piece placement", "king safety", "space", "visual scanning"],
+    "chapter_3": ["opening principles", "structural commitments", "development", "central control", "initiative", "repertoire design", "ECO", "opening statistics"],
+    "chapter_4": ["middlegame principles", "pawn breaks", "coordination", "defence", "prophylaxis", "restriction", "overprotection", "blockade", "zugzwang", "evaluation checklist"],
+    "chapter_5": ["conversion", "tactical path", "positional path", "technical path", "king-and-pawn endings", "rook endings", "minor-piece endings", "tablebases"],
+    "chapter_6": ["calculation trees", "candidate moves", "CCT", "visualisation", "falsification", "error logging", "engine management", "technical play"],
+    "chapter_7": ["psychological warfare", "title matches", "Cold War history", "sacrifices", "rivalries", "Spielmann classification", "Elo", "FIDE", "world champions"],
+    "chapter_8": ["classical principles", "structure-first chess", "unified method", "mastery"],
+    "appendix": ["daily routine", "weekly training", "pre-game protocol", "in-game execution", "post-game review", "tracking", "mastery assessment"]
+  }
+}
