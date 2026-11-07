@@ -408,6 +408,30 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
                     </div>
                   </div>
 
+                  {(currentUnit.unitCode === 'P1' ||
+                    currentUnit.unitCode === 'P2' ||
+                    currentUnit.unitCode === '1.3' ||
+                    currentUnit.unitCode === '2.5') && (
+                    <figure className="rounded-xl overflow-hidden border border-[#D9CFC0] bg-[#152921] shadow-xs">
+                      <img
+                        src={
+                          currentUnit.unitCode === 'P1' || currentUnit.unitCode === 'P2'
+                            ? '/assets/chessbook/images/2d.png'
+                            : '/assets/chessbook/images/3d.png'
+                        }
+                        alt={
+                          currentUnit.unitCode === 'P1' || currentUnit.unitCode === 'P2'
+                            ? 'Chessboard and pieces reference for board geometry and movement'
+                            : 'Three-dimensional chessboard reference for spatial perception'
+                        }
+                        className="w-full max-h-52 object-contain"
+                      />
+                      <figcaption className="px-3 py-2 text-[10px] leading-relaxed text-[#D9CFC0] font-mono">
+                        Visual reference · Lichess Chessground · GPL-3.0
+                      </figcaption>
+                    </figure>
+                  )}
+
                   {/* Reading Paragraphs with Bounded Scroll */}
                   <div className="space-y-2.5 max-h-[310px] overflow-y-auto pr-1 text-xs text-[#262626] leading-relaxed font-sans">
                     {currentUnit.contentParagraphs.map((para, i) => (

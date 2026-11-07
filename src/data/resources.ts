@@ -11,6 +11,80 @@ export interface ResourceItem {
 }
 
 export const PLATFORM_RESOURCES: ResourceItem[] = [
+  // Open asset bundle mapped to manuscript concepts
+  {
+    id: 'res_img_board_2d',
+    category: 'Visual Gallery & Assets',
+    title: 'Board Geometry & Piece Placement — 2D Reference',
+    description: 'Open chessboard reference image for the prerequisite chapter: board orientation, square geometry, piece placement, files, ranks, and visual scanning.',
+    format: 'Image',
+    imagePath: '/assets/chessbook/images/2d.png',
+    aspectRatio: '1:1'
+  },
+  {
+    id: 'res_img_board_3d',
+    category: 'Visual Gallery & Assets',
+    title: 'Board Geometry & Spatial Vision — 3D Reference',
+    description: 'Open chessboard reference image for Chapter 1 spatial intelligence and Chapter 2 visual board perception.',
+    format: 'Image',
+    imagePath: '/assets/chessbook/images/3d.png',
+    aspectRatio: '1:1'
+  },
+  {
+    id: 'res_data_openings',
+    category: 'Foundations & Standards',
+    title: 'ECO Opening Names & Structures — CC0 Dataset',
+    description: 'Lichess opening-name dataset covering ECO classifications, named variations, PGN sequences, and opening-position metadata for Chapter 3 research.',
+    format: 'Data',
+    markdownContent: `# ECO Opening Dataset
+
+The downloadable files are stored in \`/assets/chessbook/opening-data/\`.
+
+- **a.tsv–e.tsv:** ECO volumes A–E.
+- **Use in the manuscript:** identify opening families, compare transpositions, connect move sequences to resulting pawn structures, and build a repertoire index.
+- **Licence:** CC0 Public Domain Dedication, as stated by the upstream Lichess chess-openings project.
+- **Source:** https://github.com/lichess-org/chess-openings
+
+This dataset supplies names and classifications. It does not replace board analysis or prove that a move is best.`
+  },
+  {
+    id: 'res_research_lichess_db',
+    category: 'Foundations & Standards',
+    title: 'Lichess Game Database — Research Guide',
+    description: 'Documentation for using Lichess PGN exports to study openings, pawn structures, model games, rating bands, and time controls.',
+    format: 'Markdown',
+    markdownContent: `# Lichess Game Database
+
+The upstream documentation is included at \`/assets/chessbook/research/lichess-database-README.md\`.
+
+Use it to build reproducible research samples for:
+
+- opening frequencies and transpositions;
+- model games for Carlsbad, IQP, hanging-pawn, and other structures;
+- tactical and endgame examples;
+- comparisons by rating and time control.
+
+Source: https://database.lichess.org/`
+  },
+  {
+    id: 'res_research_syzygy',
+    category: 'Foundations & Standards',
+    title: 'Syzygy Tablebases — Endgame Verification',
+    description: 'Technical reference for WDL and DTZ tablebases used to verify king-and-pawn, rook, and minor-piece ending claims in Chapter 5.',
+    format: 'Markdown',
+    markdownContent: `# Syzygy Tablebases
+
+The upstream technical documentation is included at \`/assets/chessbook/research/syzygy-tablebases-README.md\`.
+
+Use tablebases after human analysis to verify:
+
+- win/draw/loss status;
+- opposition and zugzwang claims;
+- rook-ending conversion routes;
+- the effect of the 50-move rule.
+
+Source: https://github.com/syzygy1/tb`
+  },
   // 1. Official Guides
   {
     id: 'res_pdf_curriculum',
