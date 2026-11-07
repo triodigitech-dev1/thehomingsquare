@@ -3,6 +3,7 @@ import { Volume2, VolumeX, Menu, X, GraduationCap, Compass, Lock, CheckCircle2 }
 import { StudentAccount } from '../../types/chess';
 
 export type NavView =
+  | 'dashboard'
   | 'door'
   | 'cockpit'
   | 'map'
@@ -40,17 +41,19 @@ export const Header: React.FC<HeaderProps> = ({
   const isAuthenticated = Boolean(studentAccount?.isAuthenticated);
   const isAdmin = studentAccount?.role === 'admin';
 
-  // Strictly Public Links shown in the main header navigation
-  // (The Library is restricted to admins & maintainers only)
-  const publicNavLinks: { view: NavView; label: string; badge?: string }[] = [
-    { view: 'door', label: 'The Door' },
-    { view: 'commons', label: 'Study Together' },
-    { view: 'workshop', label: 'Instructor Workshop' },
-    ...(isAdmin ? [{ view: 'resources' as NavView, label: 'The Library', badge: 'Admin' }] : [])
+  // Primary LMS navigation links
+  const primaryNavLinks: { view: NavView; label: string; badge?: string }[] = [
+    { view: 'dashboard', label: 'Dashboard' },
+    { view: 'map', label: 'Curriculum Map', badge: '10 Ch' },
+    { view: 'lesson', label: 'Classroom' },
+    { view: 'drills', label: 'Drills' },
+    { view: 'log', label: 'Diagnostic Log' },
+    { view: 'resources', label: 'Textbook & Library' }
   ];
 
   // Protected academic views moved to the sidebar
   const isAcademicView = [
+    'dashboard',
     'cockpit',
     'lesson',
     'map',
@@ -62,12 +65,14 @@ export const Header: React.FC<HeaderProps> = ({
 
   const getAcademicViewName = (view: NavView) => {
     switch (view) {
+      case 'dashboard':
+        return 'Dashboard';
       case 'cockpit':
         return 'The Cockpit';
       case 'lesson':
         return 'Classroom';
       case 'map':
-        return 'The Map';
+        return 'Curriculum Map';
       case 'drills':
         return 'Drill Hall';
       case 'log':
@@ -77,7 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
       case 'passport':
         return 'The Passport';
       default:
-        return 'Study Quarters';
+        return 'Course Modules';
     }
   };
 
@@ -89,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
-            onClick={() => onNavigate('door')}
+            onClick={() => onNavigate('dashboard')}
             className="flex items-center gap-3 text-left group focus:outline-none"
           >
             {/* Golden Chess Academy Emblem */}
@@ -110,9 +115,9 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Zone 2: Strictly Public Navigation Links */}
+        {/* Zone 2: Primary LMS Navigation Links */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-sans tracking-wide">
-          {publicNavLinks.map((item) => {
+          {primaryNavLinks.map((item) => {
             const isActive = currentView === item.view;
             return (
               <button
@@ -262,7 +267,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
-          {publicNavLinks.map((item) => (
+          {primaryNavLinks.map((item) => (
             <button
               key={item.view}
               type="button"

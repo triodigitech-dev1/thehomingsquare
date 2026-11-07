@@ -7,7 +7,8 @@ import React, { useState, useEffect } from 'react';
 // Strip @vercel/analytics per AI Studio platform requirements
 const Analytics = () => null;
 import { Header, NavView } from './components/layout/Header';
-import { AcademySidebar } from './components/layout/AcademySidebar';
+import { CourseSidebar } from './components/lms/CourseSidebar';
+import { CourseDashboard } from './components/lms/CourseDashboard';
 import { DoorView } from './components/views/DoorView';
 import { CockpitView } from './components/views/CockpitView';
 import { MapView } from './components/views/MapView';
@@ -24,19 +25,18 @@ import { UserProgressState, CurriculumUnit, LoggedGame, ConversionPath, StudentA
 import { CURRICULUM_CHAPTERS } from './data/curriculum';
 import { PAWN_STRUCTURES } from './data/structures';
 import { INITIAL_LOGGED_GAMES } from './data/loggedGames';
-import { Download, Compass, Lock } from 'lucide-react';
+import { Download, Compass, LayoutDashboard } from 'lucide-react';
 import { ToastProvider, useToast } from './components/common/Toast';
-import { StudioHud } from './components/common/StudioHud';
 
 const STORAGE_KEY = 'homing_square_progress_v1';
 
 function AppContent() {
   const { toast } = useToast();
-  const [currentView, setCurrentView] = useState<NavView>('door');
+  const [currentView, setCurrentView] = useState<NavView>('dashboard');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentUnit, setCurrentUnit] = useState<CurriculumUnit>(() => {
-    return CURRICULUM_CHAPTERS[2].units[0]; // Unit 2.1: Pawn Structures
+    return CURRICULUM_CHAPTERS[0].units[0]; // Unit P.1: Welcome to the Academy
   });
 
   // Load progress from localStorage or default
@@ -201,66 +201,35 @@ function AppContent() {
         isSidebarOpen={isSidebarOpen}
       />
 
-      {/* Confined Studio Quick Action HUD */}
-      <StudioHud
-        currentView={currentView}
-        onNavigate={setCurrentView}
-        progress={progress}
-        onSelectStructure={handleSelectStructure}
-        onSetPath={handleSetPath}
-        onToggleSound={handleToggleSound}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
-      />
-
-      {/* Permissions-Based Academy Sidebar Drawer */}
-      <AcademySidebar
+      {/* Persistent LMS Course Sidebar Drawer */}
+      <CourseSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         currentView={currentView}
         onNavigate={setCurrentView}
-        studentAccount={progress.studentAccount}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        progress={progress}
-        onToggleSound={handleToggleSound}
-        onSignOut={() => {
-          setProgress((prev) => ({
-            ...prev,
-            studentAccount: prev.studentAccount
-              ? { ...prev.studentAccount, isAuthenticated: false }
-              : undefined
-          }));
-          setIsSidebarOpen(false);
-          setCurrentView('door');
-          toast.info('Signed Out', 'Returned to the threshold');
+        currentUnit={currentUnit}
+        onSelectUnit={(unit) => {
+          setCurrentUnit(unit);
+          setCurrentView('lesson');
         }}
+        progress={progress}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
-
-      {/* Guest Notice for Academic Quarters */}
-      {!progress.studentAccount?.isAuthenticated &&
-        ['cockpit', 'lesson', 'drills', 'log', 'mastery', 'passport'].includes(currentView) && (
-          <div className="bg-[#1E3A2F] text-[#F6F1E7] border-b border-[#C6A664]/30 px-4 py-2.5 shadow-xs">
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2 text-center sm:text-left">
-                <span className="px-2 py-0.5 rounded bg-[#C6A664]/20 text-[#DFCA95] font-mono text-[10px] uppercase font-semibold border border-[#C6A664]/40">
-                  Guest Preview
-                </span>
-                <span className="text-[#D9CFC0]">
-                  You are previewing this study quarter. Enrol as an active scholar to record diagnostic logs and save your progress.
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsAuthModalOpen(true)}
-                className="px-3 py-1 bg-[#C6A664] hover:bg-[#DFCA95] text-[#1E3A2F] font-semibold text-xs rounded transition-colors whitespace-nowrap shadow-xs"
-              >
-                Enrol as Scholar
-              </button>
-            </div>
-          </div>
-        )}
 
       {/* Main Content Area */}
       <main className="flex-1">
+        {currentView === 'dashboard' && (
+          <CourseDashboard
+            currentUnit={currentUnit}
+            progress={progress}
+            onSelectUnit={(unit) => {
+              setCurrentUnit(unit);
+              setCurrentView('lesson');
+            }}
+            onNavigate={setCurrentView}
+          />
+        )}
+
         {currentView === 'door' && (
           <DoorView
             onNavigate={setCurrentView}
@@ -454,18 +423,16 @@ function AppContent() {
           </div>
 
           {/* PDF Download Link */}
-          <div className="shrink-0">
             <a
-              href="/assets/aistudio/Structure_First_Chess_Mastery_31a83b4c.pdf"
-              download="Structure_First_Chess_Mastery.pdf"
+              href="/assets/chessbook/Chess_Textbook_Visual_Placement_Edition.pdf"
+              download="Chess_Textbook_Visual_Placement_Edition.pdf"
               target="_blank"
               rel="noreferrer"
               className="text-xs text-[#C6A664] hover:text-[#DFCA95] flex items-center gap-1.5 transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Curriculum Guide PDF</span>
+              <span>Textbook PDF (Visual Placement Edition)</span>
             </a>
-          </div>
 
         </div>
       </footer>

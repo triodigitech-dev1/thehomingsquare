@@ -4,22 +4,24 @@ import { CURRICULUM_CHAPTERS } from '../../data/curriculum';
 import { PAWN_STRUCTURES } from '../../data/structures';
 import { ChessBoard, playWoodenClick, Square } from '../board/ChessBoard';
 import { NavView } from '../layout/Header';
-import { StudyCard } from '../common/StudyCard';
 import { BoardToolbar } from '../common/BoardToolbar';
-import { InteractiveCheckpoint } from '../common/InteractiveCheckpoint';
+import { LessonHeader } from '../lms/LessonHeader';
+import { VisualPlacement } from '../lms/VisualPlacement';
+import { LessonCheckpoint } from '../lms/LessonCheckpoint';
 import { getVisualPlaceholder } from '../../data/visualPlaceholders';
 import {
-  CheckCircle2,
-  ArrowLeft,
-  ArrowRight,
   BookOpen,
-  Layers,
+  Target,
+  CheckCircle2,
   HelpCircle,
   Dna,
-  Compass,
-  Sparkles,
+  ArrowRight,
   RotateCcw,
-  Maximize2
+  Sparkles,
+  Layers,
+  FileText,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface LessonRoomProps {
@@ -42,7 +44,8 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
   const [currentFen, setCurrentFen] = useState(currentUnit.initialFen);
   const [lastMoveSan, setLastMoveSan] = useState<string | undefined>(undefined);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
-  const [activeRightTab, setActiveRightTab] = useState<'theory' | 'checkpoint' | 'structure'>('theory');
+  const [activeBoardTab, setActiveBoardTab] = useState<'board' | 'structure'>('board');
+  const [showChapterOutline, setShowChapterOutline] = useState(false);
 
   const isAlreadyCompleted = progress.completedUnitIds.includes(currentUnit.id);
 
@@ -51,15 +54,31 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
     setCurrentFen(currentUnit.initialFen);
     setLastMoveSan(undefined);
     setMoveHistory([]);
-    // If unit is not completed, start on theory; if completed, stay on current tab
   }, [currentUnit.id, currentUnit.initialFen]);
 
   // Find structure associated with unit if any, or default to Carlsbad
   const associatedStructure =
     PAWN_STRUCTURES.find((s) => s.id === currentUnit.structureId) || PAWN_STRUCTURES[0];
-  const visualPlaceholder = getVisualPlaceholder(currentUnit.unitCode, currentUnit.title);
 
-  // Flatten units for Prev/Next navigation
+  // Visual placement info from registry or unit
+  const rawPlaceholder = getVisualPlaceholder(currentUnit.unitCode, currentUnit.title);
+  const visualInfo = currentUnit.visualPlacement || {
+    concept: rawPlaceholder.title,
+    description: rawPlaceholder.description,
+    plannedAsset: rawPlaceholder.plannedAsset,
+    assetStatus: rawPlaceholder.assetStatus || rawPlaceholder.status || 'PLACEHOLDER',
+    assetPath: rawPlaceholder.assetPath,
+    sourceUrl: rawPlaceholder.sourceUrl,
+    license: rawPlaceholder.license,
+    attribution: rawPlaceholder.attribution
+  };
+
+  // Find parent chapter
+  const currentChapter = CURRICULUM_CHAPTERS.find((ch) =>
+    ch.units.some((u) => u.id === currentUnit.id)
+  );
+
+  // Flatten all units for Prev/Next navigation
   const allUnits = CURRICULUM_CHAPTERS.flatMap((c) => c.units);
   const currentIndex = allUnits.findIndex((u) => u.id === currentUnit.id);
   const prevUnit = currentIndex > 0 ? allUnits[currentIndex - 1] : null;
@@ -81,538 +100,347 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 font-sans">
       
-      {/* Top Breadcrumb & Next/Prev Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-2xl p-4 border border-[#D9CFC0] shadow-xs">
-        <div className="flex items-center gap-2.5 text-xs font-mono text-[#595959]">
-          <button
-            type="button"
-            onClick={() => onNavigate('map')}
-            className="hover:text-[#1E3A2F] flex items-center gap-1 font-sans transition-colors font-medium text-xs"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>The Map</span>
-          </button>
-          <span>/</span>
-          <span className="text-[#1E3A2F] font-bold">Unit {currentUnit.unitCode}</span>
-          <span>/</span>
-          <span className="truncate max-w-xs sm:max-w-sm text-[#262626] font-medium">{currentUnit.title}</span>
-        </div>
+      {/* 1. Header with Breadcrumb, Title, Completion Toggle, and Navigation */}
+      <LessonHeader
+        currentUnit={currentUnit}
+        chapter={currentChapter}
+        isCompleted={isAlreadyCompleted}
+        onToggleComplete={() => onCompleteUnit(currentUnit.id)}
+        prevUnit={prevUnit}
+        nextUnit={nextUnit}
+        onSelectUnit={onSelectUnit}
+        onNavigate={onNavigate}
+      />
 
-        <div className="flex items-center gap-2">
-          {prevUnit && (
-            <button
-              type="button"
-              onClick={() => {
-                onSelectUnit(prevUnit);
-                playWoodenClick(progress.soundEnabled);
-              }}
-              className="px-3 py-1.5 text-xs bg-[#FAF7F2] border border-[#D9CFC0] rounded-lg text-[#262626] hover:bg-[#EDE6D8] transition-colors"
-            >
-              ← Prev Unit
-            </button>
-          )}
-
-          {isAlreadyCompleted ? (
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Verified Checkpoint</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-              <span>Checkpoint Active</span>
-            </span>
-          )}
-
-          {nextUnit && (
-            <button
-              type="button"
-              onClick={() => {
-                onSelectUnit(nextUnit);
-                playWoodenClick(progress.soundEnabled);
-              }}
-              className="px-3 py-1.5 text-xs bg-[#1E3A2F] text-[#F6F1E7] rounded-lg hover:bg-[#152921] transition-colors font-semibold shadow-xs"
-            >
-              Next Unit →
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Unified Studio Workstation Frame (Dashboard within Dashboard) */}
-      <div className="bg-[#FAF7F2] rounded-2xl border border-[#D9CFC0] shadow-sm overflow-hidden">
+      {/* 2. Main Two-Column LMS Classroom Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* Studio Shell Top Ribbon */}
-        <div className="px-5 py-3.5 bg-linear-to-r from-[#1E3A2F] via-[#244336] to-[#1E3A2F] text-[#F6F1E7] flex flex-wrap items-center justify-between gap-3 border-b border-[#C6A664]/30">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-black/20 border border-[#C6A664]/40 flex items-center justify-center text-[#C6A664]">
-              <BookOpen className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#C6A664] font-semibold">
-                  Classroom Studio Workstation
-                </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/30 text-[#DFCA95]">
-                  Unit {currentUnit.unitCode}
-                </span>
-              </div>
-              <h1 className="font-display text-sm sm:text-base font-semibold text-[#F6F1E7] truncate max-w-md">
-                {currentUnit.title}
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs font-mono">
-            <span className="text-[#DFCA95] hidden sm:inline">Progress:</span>
-            <span className="bg-black/30 px-2.5 py-1 rounded-md text-[#F6F1E7] border border-white/10">
-              {progress.completedUnitIds.length} / {allUnits.length} Units Finished
-            </span>
-          </div>
-        </div>
-
-        {/* 3-Partition Studio Arena */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[#D9CFC0]">
+        {/* LEFT COLUMN: Deep Textbook Content & Pedagogical Sequence (7 cols) */}
+        <div className="lg:col-span-7 space-y-6">
           
-          {/* COLUMN 1: Syllabus Rail (3 cols on lg, collapsed/compact) */}
-          <div className="lg:col-span-3 p-4 bg-[#F5EFE6]/60 flex flex-col justify-between space-y-3">
-            <div className="flex items-center justify-between border-b border-[#D9CFC0] pb-2.5">
-              <span className="text-xs font-mono uppercase text-[#C6A664] font-semibold flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5" />
-                <span>Syllabus Rail</span>
-              </span>
-              <span className="text-[11px] font-mono text-[#595959]">
-                {Math.round((progress.completedUnitIds.length / allUnits.length) * 100)}% Complete
-              </span>
+          {/* Card: Learning Objectives & Expected Outcome */}
+          <div className="bg-white rounded-2xl p-5 sm:p-6 border border-[#D9CFC0] shadow-xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-[#D9CFC0]/60 pb-3">
+              <Target className="w-4 h-4 text-[#C6A664]" />
+              <h2 className="font-display text-sm font-semibold text-[#1E3A2F] uppercase tracking-wide">
+                Pedagogical Objectives
+              </h2>
             </div>
 
-            {/* Scrollable Course Syllabus Tree */}
-            <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1 text-xs">
-              {CURRICULUM_CHAPTERS.map((ch) => (
-                <div key={ch.id} className="space-y-1">
-                  <div className="font-mono text-[11px] font-semibold text-[#1E3A2F] uppercase tracking-wide flex items-center justify-between py-0.5">
-                    <span className="truncate">{ch.code}: {ch.title}</span>
-                  </div>
-                  <div className="space-y-1 pl-2 border-l-2 border-[#D9CFC0]">
-                    {ch.units.map((u) => {
-                      const isSelected = u.id === currentUnit.id;
-                      const isDone = progress.completedUnitIds.includes(u.id);
-                      return (
-                        <button
-                          key={u.id}
-                          type="button"
-                          onClick={() => {
-                            onSelectUnit(u);
-                            playWoodenClick(progress.soundEnabled);
-                          }}
-                          className={`w-full text-left py-1 px-2 rounded-lg transition-all text-xs flex items-center justify-between group ${
-                            isSelected
-                              ? 'bg-[#1E3A2F] text-[#F6F1E7] font-semibold shadow-xs'
-                              : 'text-[#595959] hover:bg-white hover:text-[#262626]'
-                          }`}
-                        >
-                          <span className="truncate pr-1">
-                            {u.unitCode}. {u.title}
-                          </span>
-                          {isDone ? (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-[#C6A664] shrink-0" />
-                          ) : (
-                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSelected ? 'bg-[#C6A664]' : 'bg-[#D9CFC0] group-hover:bg-[#1E3A2F]'}`} />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#D9CFC0]/80 space-y-1">
+                <span className="font-mono text-[10px] uppercase font-bold text-[#C6A664] block">
+                  What You Will Learn
+                </span>
+                <p className="text-[#262626] font-medium leading-relaxed">
+                  {currentUnit.whatToLearn}
+                </p>
+              </div>
 
-            {/* Bottom Syllabus Tip */}
-            <div className="pt-2 border-t border-[#D9CFC0] text-[11px] text-[#8C7A6B] font-mono flex items-center justify-between">
-              <span>{CURRICULUM_CHAPTERS.length} Chapters Cartography</span>
-              <button
-                type="button"
-                onClick={() => onNavigate('map')}
-                className="text-[#1E3A2F] font-semibold hover:underline"
-              >
-                Open Map →
-              </button>
+              <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#D9CFC0]/80 space-y-1">
+                <span className="font-mono text-[10px] uppercase font-bold text-emerald-700 block">
+                  Expected Outcome
+                </span>
+                <p className="text-[#262626] font-medium leading-relaxed">
+                  {currentUnit.expectedOutcome}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* COLUMN 2: Analysis Board Stage (5 cols on lg) */}
-          <div className="lg:col-span-5 p-5 flex flex-col items-center justify-between space-y-4 bg-white/40">
-            
-            {/* Board Sub-Header */}
-            <div className="w-full flex items-center justify-between border-b border-[#D9CFC0] pb-2.5">
-              <div>
-                <span className="text-[10px] font-mono uppercase text-[#C6A664] font-semibold block">
-                  Interactive Model Stage
-                </span>
-                <h3 className="font-display text-sm font-semibold text-[#1E3A2F]">
-                  {associatedStructure.name}
-                </h3>
-              </div>
+          {/* Card: Core Textbook Doctrine & Concept Explanations */}
+          <article className="bg-white rounded-2xl p-6 sm:p-7 border border-[#D9CFC0] shadow-xs space-y-5">
+            <div className="flex items-center justify-between border-b border-[#D9CFC0]/60 pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white border border-[#D9CFC0] text-[#1E3A2F] font-semibold">
-                  Homing: c5
-                </span>
+                <BookOpen className="w-4 h-4 text-[#C6A664]" />
+                <h2 className="font-display text-base font-semibold text-[#1E3A2F]">
+                  Textbook Doctrine & Theory
+                </h2>
               </div>
-            </div>
-
-            {/* Pinned Chessboard Arena */}
-            <div className="flex flex-col items-center w-full py-1">
-              <ChessBoard
-                initialFen={currentFen}
-                interactive={true}
-                onMove={handleBoardMove}
-                pawnSkeletonOnly={pawnSkeletonMode}
-                homingSquare="c5"
-                flipped={boardFlipped}
-                size="md"
-              />
-
-              <BoardToolbar
-                fen={currentFen}
-                flipped={boardFlipped}
-                onToggleFlip={() => setBoardFlipped(!boardFlipped)}
-                pawnSkeletonOnly={pawnSkeletonMode}
-                onTogglePawnSkeleton={() => setPawnSkeletonMode(!pawnSkeletonMode)}
-                onReset={handleResetBoard}
-                soundEnabled={progress.soundEnabled}
-                lastMoveSan={lastMoveSan}
-                moveHistory={moveHistory}
-                className="mt-3 max-w-[320px]"
-              />
-            </div>
-
-            {/* Quick Levers Strip */}
-            <div className="w-full p-3 bg-white rounded-xl border border-[#D9CFC0] space-y-1 text-xs shadow-xs">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="font-semibold text-[#1E3A2F] font-display">
-                  Pawn Levers & Breaks:
-                </span>
-                <span className="font-mono text-[10px] text-[#C6A664] font-semibold">
-                  {associatedStructure.category}
-                </span>
-              </div>
-              <p className="text-[11px] text-[#595959] font-sans">
-                <strong>White:</strong> {associatedStructure.whiteBreaks.join(' · ')} | <strong>Black:</strong> {associatedStructure.blackBreaks.join(' · ')}
-              </p>
-            </div>
-
-            {/* Quick Fast-Action Switch to Checkpoint */}
-            <div className="w-full pt-1 flex items-center justify-between text-xs">
-              <span className="font-mono text-[11px] text-[#595959]">
-                Model: <strong>{associatedStructure.historicalModel}</strong>
+              <span className="text-[11px] font-mono text-[#8C7A6B]">
+                {currentChapter ? currentChapter.code : 'Unit'} · Lesson {currentUnit.unitCode}
               </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveRightTab('checkpoint');
-                  playWoodenClick(progress.soundEnabled);
-                }}
-                className="text-[#1E3A2F] font-semibold hover:text-[#C6A664] transition-colors flex items-center gap-1"
-              >
-                <span>Answer Checkpoint</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
             </div>
 
-          </div>
+            {/* Paragraphs from Source of Truth */}
+            <div className="space-y-4 text-sm text-[#262626] leading-relaxed font-sans">
+              {currentUnit.contentParagraphs && currentUnit.contentParagraphs.length > 0 ? (
+                currentUnit.contentParagraphs.map((para, idx) => (
+                  <p key={idx} className="leading-relaxed">
+                    {para}
+                  </p>
+                ))
+              ) : (
+                <p className="leading-relaxed">
+                  {currentUnit.summary}
+                </p>
+              )}
+            </div>
 
-          {/* COLUMN 3: Workstation Desk (4 cols on lg) */}
-          <div className="lg:col-span-4 p-5 flex flex-col justify-between space-y-4 bg-white/70">
-            
-            {/* Workstation Tabs */}
-            <div className="flex bg-[#EDE6D8] p-1 rounded-xl border border-[#D9CFC0]">
+            {/* Visual Placement Area: Required to be placed beside or after concept */}
+            <div className="pt-2">
+              <VisualPlacement
+                placement={visualInfo}
+                defaultTitle={currentUnit.title}
+              />
+            </div>
+
+            {/* Worked Example or Worked Board Position */}
+            {currentUnit.workedExample && (
+              <div className="p-4 rounded-xl bg-[#FAF7F2] border border-[#C6A664]/40 space-y-2">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#8C6D28] font-bold block">
+                  Worked Master Example: {currentUnit.workedExample.title}
+                </span>
+                <p className="text-xs text-[#262626] leading-relaxed font-sans">
+                  {currentUnit.workedExample.explanation}
+                </p>
+              </div>
+            )}
+
+            {/* Practical Exercise */}
+            {currentUnit.practicalExercise && (
+              <div className="p-4 rounded-xl bg-white border border-[#D9CFC0] space-y-2 shadow-2xs">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#1E3A2F] font-bold block">
+                  Practical Board Exercise: {currentUnit.practicalExercise.title}
+                </span>
+                <p className="text-xs text-[#595959] leading-relaxed font-sans">
+                  {currentUnit.practicalExercise.task}
+                </p>
+                {currentUnit.practicalExercise.solution && (
+                  <p className="text-[11px] text-[#8C6D28] font-mono pt-1 border-t border-[#D9CFC0]">
+                    Solution: {currentUnit.practicalExercise.solution}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Reflection / Diagnostic Error Prompt */}
+            {currentUnit.reflectionPrompt && (
+              <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-200/80 space-y-2">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-amber-900 font-bold block">
+                  Cognitive Reflection & Error Radar
+                </span>
+                <p className="text-xs text-amber-950 leading-relaxed font-sans italic">
+                  “{currentUnit.reflectionPrompt}”
+                </p>
+              </div>
+            )}
+          </article>
+
+          {/* Card: End-of-Unit Checkpoint */}
+          <LessonCheckpoint
+            checkpoint={currentUnit.checkpoint}
+            unitCode={currentUnit.unitCode}
+            isCompleted={isAlreadyCompleted}
+            onPassCheckpoint={() => onCompleteUnit(currentUnit.id)}
+            onNextLesson={nextUnit ? () => onSelectUnit(nextUnit) : undefined}
+            soundEnabled={progress.soundEnabled}
+          />
+
+          {/* Quick Chapter Syllabus Collapsible */}
+          {currentChapter && (
+            <div className="bg-white rounded-2xl p-5 border border-[#D9CFC0] shadow-xs space-y-3">
               <button
                 type="button"
-                onClick={() => {
-                  setActiveRightTab('theory');
-                  playWoodenClick(progress.soundEnabled);
-                }}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                  activeRightTab === 'theory'
-                    ? 'bg-[#1E3A2F] text-[#F6F1E7] shadow-xs'
-                    : 'text-[#595959] hover:text-[#1E3A2F]'
-                }`}
+                onClick={() => setShowChapterOutline(!showChapterOutline)}
+                className="w-full flex items-center justify-between text-left"
               >
-                <BookOpen className="w-3.5 h-3.5 text-[#C6A664]" />
-                <span>Theory</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveRightTab('checkpoint');
-                  playWoodenClick(progress.soundEnabled);
-                }}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                  activeRightTab === 'checkpoint'
-                    ? 'bg-[#1E3A2F] text-[#F6F1E7] shadow-xs'
-                    : 'text-[#595959] hover:text-[#1E3A2F]'
-                }`}
-              >
-                <HelpCircle className="w-3.5 h-3.5 text-[#C6A664]" />
-                <span>Checkpoint</span>
-                {isAlreadyCompleted ? (
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-[#C6A664]" />
+                  <span className="font-display text-sm font-semibold text-[#1E3A2F]">
+                    {currentChapter.code}: {currentChapter.title} ({currentChapter.units.length} Lessons)
+                  </span>
+                </div>
+                {showChapterOutline ? (
+                  <ChevronUp className="w-4 h-4 text-[#595959]" />
                 ) : (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  <ChevronDown className="w-4 h-4 text-[#595959]" />
                 )}
               </button>
 
+              {showChapterOutline && (
+                <div className="pt-2 border-t border-[#D9CFC0]/60 space-y-1">
+                  {currentChapter.units.map((u) => {
+                    const isSelected = u.id === currentUnit.id;
+                    const isDone = progress.completedUnitIds.includes(u.id);
+
+                    return (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onClick={() => {
+                          onSelectUnit(u);
+                          playWoodenClick(progress.soundEnabled);
+                        }}
+                        className={`w-full text-left p-2.5 rounded-xl transition-all text-xs flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-[#1E3A2F] text-[#F6F1E7] font-semibold'
+                            : 'text-[#595959] hover:bg-[#FAF7F2] hover:text-[#262626]'
+                        }`}
+                      >
+                        <span className="truncate pr-2">
+                          {u.unitCode}. {u.title}
+                        </span>
+                        {isDone ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#C6A664] shrink-0" />
+                        ) : (
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              isSelected ? 'bg-[#C6A664]' : 'bg-[#D9CFC0]'
+                            }`}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+
+        {/* RIGHT COLUMN: Interactive Analysis Chessboard & Structure DNA (5 cols) */}
+        <div className="lg:col-span-5 space-y-5 lg:sticky lg:top-20">
+          
+          <div className="bg-white rounded-2xl p-5 border border-[#D9CFC0] shadow-sm space-y-4">
+            
+            {/* Stage Header & Tabs */}
+            <div className="flex items-center justify-between border-b border-[#D9CFC0]/60 pb-3">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#C6A664] font-bold block">
+                  Interactive Board Lab
+                </span>
+                <h3 className="font-display text-sm font-semibold text-[#1E3A2F]">
+                  Analysis & Calculation Stage
+                </h3>
+              </div>
+
+              <div className="flex bg-[#EDE6D8] p-0.5 rounded-lg border border-[#D9CFC0]">
+                <button
+                  type="button"
+                  onClick={() => setActiveBoardTab('board')}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors ${
+                    activeBoardTab === 'board'
+                      ? 'bg-[#1E3A2F] text-[#F6F1E7]'
+                      : 'text-[#595959] hover:text-[#1E3A2F]'
+                  }`}
+                >
+                  Board
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveBoardTab('structure')}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors ${
+                    activeBoardTab === 'structure'
+                      ? 'bg-[#1E3A2F] text-[#F6F1E7]'
+                      : 'text-[#595959] hover:text-[#1E3A2F]'
+                  }`}
+                >
+                  Structure
+                </button>
+              </div>
+            </div>
+
+            {activeBoardTab === 'board' ? (
+              <div className="space-y-3">
+                {/* Board Component */}
+                <div className="flex justify-center">
+                  <ChessBoard
+                    initialFen={currentFen}
+                    interactive={true}
+                    onMove={handleBoardMove}
+                    pawnSkeletonOnly={pawnSkeletonMode}
+                    homingSquare={associatedStructure.keyOutposts[0] || 'c5'}
+                    flipped={boardFlipped}
+                    size="md"
+                  />
+                </div>
+
+                {/* Toolbar */}
+                <BoardToolbar
+                  fen={currentFen}
+                  flipped={boardFlipped}
+                  onToggleFlip={() => setBoardFlipped(!boardFlipped)}
+                  pawnSkeletonOnly={pawnSkeletonMode}
+                  onTogglePawnSkeleton={() => setPawnSkeletonMode(!pawnSkeletonMode)}
+                  onReset={handleResetBoard}
+                  soundEnabled={progress.soundEnabled}
+                  lastMoveSan={lastMoveSan}
+                  moveHistory={moveHistory}
+                />
+
+                {/* Annotation help */}
+                <div className="p-3 rounded-xl bg-[#FAF7F2] border border-[#D9CFC0] text-[11px] text-[#595959] space-y-1">
+                  <div className="flex items-center justify-between text-xs font-semibold text-[#1E3A2F]">
+                    <span>Interactive Features</span>
+                    <span className="font-mono text-[10px] text-[#C6A664]">Lichess / Chess.com feel</span>
+                  </div>
+                  <p>
+                    • <strong>Drag & Drop</strong> or click to move pieces.
+                  </p>
+                  <p>
+                    • <strong>Right-click</strong> square to highlight; <strong>right-click drag</strong> to draw arrow.
+                  </p>
+                  <p>
+                    • Automatic pawn promotion modal with Queen, Knight, Rook, Bishop.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 text-xs">
+                <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#D9CFC0] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-display font-semibold text-sm text-[#1E3A2F]">
+                      {associatedStructure.name}
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white text-[#C6A664] border border-[#D9CFC0] font-bold">
+                      {associatedStructure.category}
+                    </span>
+                  </div>
+                  <p className="text-[#595959] leading-relaxed">
+                    {associatedStructure.notes || associatedStructure.oneSentencePlan}
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white border border-[#D9CFC0] space-y-1.5">
+                  <span className="text-[10px] font-mono uppercase text-[#C6A664] font-bold block">
+                    Pawn Levers & Breaks
+                  </span>
+                  <div>
+                    <strong className="text-[#1E3A2F]">White:</strong>{' '}
+                    <span className="text-[#595959]">{associatedStructure.whiteBreaks.join(' · ')}</span>
+                  </div>
+                  <div>
+                    <strong className="text-[#1E3A2F]">Black:</strong>{' '}
+                    <span className="text-[#595959]">{associatedStructure.blackBreaks.join(' · ')}</span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white border border-[#D9CFC0] space-y-1">
+                  <span className="text-[10px] font-mono uppercase text-[#C6A664] font-bold block">
+                    One-Sentence Plan
+                  </span>
+                  <p className="text-[#1E3A2F] italic font-medium">
+                    “{associatedStructure.oneSentencePlan}”
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Next Lesson Fast CTA */}
+            {nextUnit && (
               <button
                 type="button"
                 onClick={() => {
-                  setActiveRightTab('structure');
+                  onSelectUnit(nextUnit);
                   playWoodenClick(progress.soundEnabled);
                 }}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                  activeRightTab === 'structure'
-                    ? 'bg-[#1E3A2F] text-[#F6F1E7] shadow-xs'
-                    : 'text-[#595959] hover:text-[#1E3A2F]'
-                }`}
+                className="w-full py-2.5 px-4 rounded-xl bg-[#1E3A2F] hover:bg-[#152921] text-[#F6F1E7] text-xs font-semibold transition-all flex items-center justify-center gap-2 shadow-xs"
               >
-                <Dna className="w-3.5 h-3.5 text-[#C6A664]" />
-                <span>DNA</span>
+                <span>Proceed to Next Lesson: Unit {nextUnit.unitCode}</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#C6A664]" />
               </button>
-            </div>
-
-            {/* TAB 1: Theory Content (Internal Scrollable Container) */}
-            {activeRightTab === 'theory' && (
-              <div className="space-y-3.5 animate-fadeIn flex-1 flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="border-b border-[#D9CFC0] pb-2">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-[#C6A664] font-semibold block">
-                      Core Syllabus Doctrine
-                    </span>
-                    <h2 className="font-display text-base sm:text-lg text-[#1E3A2F] font-semibold leading-snug">
-                      {currentUnit.title}
-                    </h2>
-                    {currentUnit.subtitle && (
-                      <p className="text-xs text-[#595959] mt-0.5 font-sans">
-                        {currentUnit.subtitle}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* What to Learn & Outcome */}
-                  <div className="p-3 bg-white rounded-xl border border-[#D9CFC0] space-y-1.5 text-xs shadow-xs">
-                    <div>
-                      <strong className="text-[#1E3A2F]">What to Learn:</strong>{' '}
-                      <span className="text-[#595959]">{currentUnit.whatToLearn}</span>
-                    </div>
-                    <div className="pt-1 border-t border-[#D9CFC0]/50">
-                      <strong className="text-[#1E3A2F]">Expected Outcome:</strong>{' '}
-                      <span className="text-[#595959]">{currentUnit.expectedOutcome}</span>
-                    </div>
-                  </div>
-
-                  {/* Visual Placement or Verified Inserted Asset */}
-                  {visualPlaceholder.assetStatus === 'INSERTED' && visualPlaceholder.assetPath ? (
-                    <figure className="rounded-xl border border-[#1E3A2F]/30 bg-white overflow-hidden shadow-xs">
-                      <div className="bg-[#152921] p-3 text-center border-b border-[#D9CFC0]">
-                        <img
-                          src={visualPlaceholder.assetPath}
-                          alt={visualPlaceholder.title}
-                          className="max-h-72 mx-auto rounded-lg object-contain shadow-xs border border-white/20"
-                        />
-                      </div>
-                      <figcaption className="p-3 text-xs text-[#262626] bg-[#FAF7F2] space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-[#1E3A2F] text-[11px] font-mono uppercase">
-                            {visualPlaceholder.title}
-                          </span>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold">
-                            Verified Asset · INSERTED
-                          </span>
-                        </div>
-                        <p className="text-[#595959] text-xs leading-relaxed">
-                          {visualPlaceholder.description}
-                        </p>
-                        {visualPlaceholder.attribution && (
-                          <div className="text-[10px] font-mono text-[#8C7A6B] pt-1.5 border-t border-[#D9CFC0] flex flex-wrap items-center justify-between gap-1">
-                            <span>Licence: {visualPlaceholder.license}</span>
-                            <span className="truncate max-w-xs">{visualPlaceholder.attribution}</span>
-                          </div>
-                        )}
-                      </figcaption>
-                    </figure>
-                  ) : (
-                    <figure className="rounded-xl border-2 border-dashed border-[#C6A664] bg-[#F5EFE6] shadow-xs overflow-hidden">
-                      <div className="p-4 flex flex-col justify-center gap-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-[#8C6D28] font-bold bg-[#EDE6D8] px-2 py-0.5 rounded">
-                            Visual Placement Brief
-                          </span>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-semibold">
-                            PLACEHOLDER · Not Yet Inserted
-                          </span>
-                        </div>
-                        <h3 className="font-display text-sm font-semibold text-[#1E3A2F]">
-                          {visualPlaceholder.title}
-                        </h3>
-                        <p className="text-xs leading-relaxed text-[#595959]">
-                          {visualPlaceholder.description}
-                        </p>
-                        <div className="pt-2 border-t border-[#D9CFC0] text-[10px] font-mono text-[#8C7A6B] space-y-0.5">
-                          <div><strong className="text-[#1E3A2F]">Concept:</strong> {visualPlaceholder.title}</div>
-                          <div><strong className="text-[#1E3A2F]">Required Asset:</strong> {visualPlaceholder.plannedAsset}</div>
-                        </div>
-                      </div>
-                      <figcaption className="px-4 py-2 text-[10px] leading-relaxed text-[#8C7A6B] font-mono border-t border-[#D9CFC0] bg-[#EDE6D8]/50">
-                        Asset status: not inserted yet. Source a downloaded public-domain or Creative Commons file, verify the file-level licence, and add attribution before publication.
-                      </figcaption>
-                    </figure>
-                  )}
-
-                  {/* Reading Paragraphs with Bounded Scroll */}
-                  <div className="space-y-2.5 max-h-[310px] overflow-y-auto pr-1 text-xs text-[#262626] leading-relaxed font-sans">
-                    {currentUnit.contentParagraphs.map((para, i) => (
-                      <p key={i} className="p-2.5 bg-white rounded-lg border border-[#D9CFC0]/60 shadow-2xs">
-                        {para}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Footer Switcher */}
-                <div className="pt-2 border-t border-[#D9CFC0] flex items-center justify-between">
-                  <span className="text-[11px] text-[#8C7A6B] font-mono">
-                    {isAlreadyCompleted ? 'Checkpoint Verified ✓' : 'Ready to verify?'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveRightTab('checkpoint');
-                      playWoodenClick(progress.soundEnabled);
-                    }}
-                    className="px-3.5 py-1.5 bg-[#1E3A2F] hover:bg-[#152921] text-[#F6F1E7] text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-xs"
-                  >
-                    <span>Proceed to Checkpoint</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-[#C6A664]" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* TAB 2: Interactive Checkpoint (Side-by-side with the board) */}
-            {activeRightTab === 'checkpoint' && (
-              <div className="space-y-3 animate-fadeIn flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="border-b border-[#D9CFC0] pb-2">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-[#C6A664] font-semibold block">
-                      Interactive Evaluation
-                    </span>
-                    <h3 className="font-display text-base font-semibold text-[#1E3A2F]">
-                      Unit {currentUnit.unitCode} Verification
-                    </h3>
-                    <span className="text-[11px] text-[#595959]">
-                      Consult the analysis board to calculate your answer.
-                    </span>
-                  </div>
-
-                  {/* Checkpoint Component in Bounded Scrollable Container */}
-                  <div className="bg-white rounded-xl p-4 border border-[#D9CFC0] shadow-xs max-h-[420px] overflow-y-auto pr-1 mt-3">
-                    <InteractiveCheckpoint
-                      checkpoint={currentUnit.checkpoint}
-                      onSuccess={() => onCompleteUnit(currentUnit.id)}
-                      isAlreadyCompleted={isAlreadyCompleted}
-                      soundEnabled={progress.soundEnabled}
-                      onNext={nextUnit ? () => onSelectUnit(nextUnit) : undefined}
-                      nextLabel="Proceed to Next Unit →"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-[#D9CFC0] flex items-center justify-between text-[11px] text-[#595959] font-mono">
-                  <span>Homecoming Standard</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveRightTab('theory');
-                      playWoodenClick(progress.soundEnabled);
-                    }}
-                    className="text-[#1E3A2F] hover:underline"
-                  >
-                    ← Review Theory
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* TAB 3: Structural DNA & Specs */}
-            {activeRightTab === 'structure' && (
-              <div className="space-y-3 animate-fadeIn flex-1 flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="border-b border-[#D9CFC0] pb-2">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-[#C6A664] font-semibold block">
-                      Structural Blueprint
-                    </span>
-                    <h3 className="font-display text-base font-semibold text-[#1E3A2F]">
-                      {associatedStructure.name}
-                    </h3>
-                  </div>
-
-                  <div className="p-3.5 bg-white rounded-xl border border-[#D9CFC0] space-y-2 text-xs shadow-xs">
-                    <div>
-                      <span className="text-[10px] font-mono uppercase text-[#C6A664] block font-semibold">
-                        Move 12 One-Sentence Plan
-                      </span>
-                      <p className="font-display italic text-xs text-[#1E3A2F] mt-0.5 leading-snug">
-                        “{associatedStructure.oneSentencePlan}”
-                      </p>
-                    </div>
-
-                    <div className="pt-2 border-t border-[#D9CFC0]/50 space-y-1">
-                      <div className="text-[11px] font-mono text-[#595959]">
-                        <strong className="text-[#1E3A2F]">White Skeleton:</strong> {associatedStructure.whitePawnSkeleton.join(', ')}
-                      </div>
-                      <div className="text-[11px] font-mono text-[#595959]">
-                        <strong className="text-[#1E3A2F]">Black Skeleton:</strong> {associatedStructure.blackPawnSkeleton.join(', ')}
-                      </div>
-                    </div>
-
-                    <div className="pt-2 border-t border-[#D9CFC0]/50 space-y-1">
-                      <div className="text-[11px] text-[#595959]">
-                        <strong>Break Levers:</strong> {associatedStructure.whiteBreaks.join(' · ')}
-                      </div>
-                      <div className="text-[11px] text-[#595959]">
-                        <strong>Key Outposts:</strong> {associatedStructure.keyOutposts.join(' · ')}
-                      </div>
-                      <div className="text-[11px] text-[#595959]">
-                        <strong>Historical Model:</strong> {associatedStructure.historicalModel}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-[#EDE6D8]/50 rounded-xl border border-[#D9CFC0] text-xs space-y-1">
-                    <span className="font-semibold text-[#1E3A2F] block font-display">
-                      The Three Cognitive Questions
-                    </span>
-                    <ol className="list-decimal list-inside space-y-0.5 text-[11px] text-[#262626]">
-                      <li>What is the pawn structure?</li>
-                      <li>What one-sentence plan belongs to it?</li>
-                      <li>Has anything just changed?</li>
-                    </ol>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-[#D9CFC0] flex items-center justify-between text-xs">
-                  <span className="font-mono text-[11px] text-[#8C7A6B]">
-                    Homing Square c5
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => onNavigate('cockpit')}
-                    className="text-[#1E3A2F] font-semibold hover:underline"
-                  >
-                    Open in Cockpit →
-                  </button>
-                </div>
-              </div>
             )}
 
           </div>
