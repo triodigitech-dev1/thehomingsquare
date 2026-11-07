@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { LoggedGame, ErrorLeakCategory, ConversionPath } from '../../types/chess';
 import { PAWN_STRUCTURES, ERROR_CATEGORIES } from '../../data/structures';
 import { ChessBoard, playWoodenClick } from '../board/ChessBoard';
+import { BoardToolbar } from '../common/BoardToolbar';
 import { NavView } from '../layout/Header';
-import { BookOpen, Plus, Tag, Shield, ArrowRight, CheckCircle2, ChevronRight, FileText } from 'lucide-react';
+import { BookOpen, Plus, Tag, Shield, ArrowRight, CheckCircle2, ChevronRight, FileText, Search } from 'lucide-react';
 
 interface LogViewProps {
   loggedGames: LoggedGame[];
@@ -43,7 +44,27 @@ export const LogView: React.FC<LogViewProps> = ({
   const [newLeakLesson, setNewLeakLesson] = useState('');
   const [newPgn, setNewPgn] = useState('');
 
-  const activeGame = loggedGames.find((g) => g.id === selectedGameId) || loggedGames[0];
+  const [searchQuery, setSearchQuery] = useState('');
+  const [resultFilter, setResultFilter] = useState('all');
+  const [boardFlipped, setBoardFlipped] = useState(false);
+  const [pawnSkeletonMode, setPawnSkeletonMode] = useState(false);
+
+  const filteredGames = loggedGames.filter((g) => {
+    if (resultFilter !== 'all' && g.result !== resultFilter) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return (
+        g.title.toLowerCase().includes(q) ||
+        g.structure.toLowerCase().includes(q) ||
+        g.whitePlayer.toLowerCase().includes(q) ||
+        g.blackPlayer.toLowerCase().includes(q) ||
+        g.event.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  const activeGame = loggedGames.find((g) => g.id === selectedGameId) || filteredGames[0] || loggedGames[0];
 
   const handleCreateGame = (e: React.FormEvent) => {
     e.preventDefault();
@@ -381,47 +402,91 @@ export const LogView: React.FC<LogViewProps> = ({
         {/* Left List (4 cols) */}
         <div className="lg:col-span-4 bg-[#FAF7F2] rounded-2xl p-5 border border-[#D9CFC0]/60 shadow-sm space-y-3">
           <div className="border-b border-[#D9CFC0]/60 pb-3 flex items-center justify-between">
-            <span className="text-xs font-mono uppercase text-[#C6A664] tracking-wider">
+            <span className="text-xs font-mono uppercase text-[#C6A664] tracking-wider font-semibold">
               Recorded Games
             </span>
             <span className="text-xs text-[#595959] font-mono">
-              {loggedGames.length} Total
+              {filteredGames.length} of {loggedGames.length}
             </span>
           </div>
 
-          <div className="space-y-2 max-h-[640px] overflow-y-auto pr-1">
-            {loggedGames.map((game) => {
-              const isSelected = game.id === activeGame?.id;
-              return (
-                <button
-                  key={game.id}
-                  type="button"
-                  onClick={() => setSelectedGameId(game.id)}
-                  className={`w-full text-left p-3.5 rounded-xl border transition-all ${
-                    isSelected
-                      ? 'bg-[#1E3A2F] text-[#F6F1E7] border-[#1E3A2F]'
-                      : 'bg-white border-[#D9CFC0] text-[#262626] hover:border-[#1E3A2F]/50 shadow-xs'
-                  }`}
-                >
-                  <div className="flex items-center justify-between text-[11px] font-mono mb-1">
-                    <span className={isSelected ? 'text-[#C6A664]' : 'text-[#595959]'}>
-                      {game.date}
-                    </span>
-                    <span className="font-semibold">{game.result}</span>
-                  </div>
-                  <h3 className="font-display text-sm font-semibold leading-snug truncate">
-                    {game.title}
-                  </h3>
-                  <div
-                    className={`text-xs mt-1 truncate ${
-                      isSelected ? 'text-[#D9CFC0]' : 'text-[#595959]'
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#8C7A6B]" />
+            <input
+              type="text"
+              placeholder="Filter by title, player, or structure..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full text-xs bg-white border border-[#D9CFC0] rounded-lg pl-8 pr-3 py-2 text-[#262626] focus:outline-none focus:ring-1 focus:ring-[#1E3A2F]"
+            />
+          </div>
+
+          {/* Result Filter Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+            {[
+              { id: 'all', label: 'All' },
+              { id: '1 - 0', label: '1 - 0' },
+              { id: '0 - 1', label: '0 - 1' },
+              { id: '1/2 - 1/2', label: '½ - ½' }
+            ].map((rf) => (
+              <button
+                key={rf.id}
+                type="button"
+                onClick={() => setResultFilter(rf.id)}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-mono transition-colors shrink-0 ${
+                  resultFilter === rf.id
+                    ? 'bg-[#1E3A2F] text-[#F6F1E7] font-semibold'
+                    : 'bg-[#EDE6D8] text-[#595959] hover:bg-white'
+                }`}
+              >
+                {rf.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-2 max-h-[580px] overflow-y-auto pr-1">
+            {filteredGames.length === 0 ? (
+              <div className="p-4 text-center text-xs text-[#8C7A6B] bg-white rounded-xl border border-[#D9CFC0]">
+                No recorded games match your search criteria.
+              </div>
+            ) : (
+              filteredGames.map((game) => {
+                const isSelected = game.id === activeGame?.id;
+                return (
+                  <button
+                    key={game.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedGameId(game.id);
+                      playWoodenClick(soundEnabled);
+                    }}
+                    className={`w-full text-left p-3.5 rounded-xl border transition-all ${
+                      isSelected
+                        ? 'bg-[#1E3A2F] text-[#F6F1E7] border-[#1E3A2F]'
+                        : 'bg-white border-[#D9CFC0] text-[#262626] hover:border-[#1E3A2F]/50 shadow-xs'
                     }`}
                   >
-                    {game.structure}
-                  </div>
-                </button>
-              );
-            })}
+                    <div className="flex items-center justify-between text-[11px] font-mono mb-1">
+                      <span className={isSelected ? 'text-[#C6A664]' : 'text-[#595959]'}>
+                        {game.date}
+                      </span>
+                      <span className="font-semibold">{game.result}</span>
+                    </div>
+                    <h3 className="font-display text-sm font-semibold leading-snug truncate">
+                      {game.title}
+                    </h3>
+                    <div
+                      className={`text-xs mt-1 truncate ${
+                        isSelected ? 'text-[#D9CFC0]' : 'text-[#595959]'
+                      }`}
+                    >
+                      {game.structure}
+                    </div>
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -454,12 +519,22 @@ export const LogView: React.FC<LogViewProps> = ({
 
             {/* Chessboard Preview if FEN available */}
             {activeGame.fenKeyPosition && (
-              <div className="flex justify-center p-3 bg-[#EDE6D8]/40 rounded-xl border border-[#D9CFC0]">
+              <div className="flex flex-col items-center p-4 bg-[#EDE6D8]/40 rounded-xl border border-[#D9CFC0]">
                 <ChessBoard
                   initialFen={activeGame.fenKeyPosition}
                   interactive={false}
                   size="sm"
                   homingSquare="c5"
+                  flipped={boardFlipped}
+                  pawnSkeletonOnly={pawnSkeletonMode}
+                />
+                <BoardToolbar
+                  fen={activeGame.fenKeyPosition}
+                  flipped={boardFlipped}
+                  onToggleFlip={() => setBoardFlipped(!boardFlipped)}
+                  pawnSkeletonOnly={pawnSkeletonMode}
+                  onTogglePawnSkeleton={() => setPawnSkeletonMode(!pawnSkeletonMode)}
+                  className="mt-2 max-w-[280px]"
                 />
               </div>
             )}

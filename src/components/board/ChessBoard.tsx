@@ -13,8 +13,10 @@ interface ChessBoardProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+export type { Square, PieceSymbol, Color };
+
 // Gentle wooden tap using Web Audio API
-export function playWoodenClick(enabled = true) {
+export function playWoodenClick(enabled = true, isCapture = false) {
   if (!enabled || typeof window === 'undefined') return;
   try {
     const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
@@ -23,20 +25,105 @@ export function playWoodenClick(enabled = true) {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(140, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(45, ctx.currentTime + 0.06);
+    osc.type = isCapture ? 'square' : 'triangle';
+    const startFreq = isCapture ? 190 : 140;
+    const endFreq = isCapture ? 60 : 45;
+    osc.frequency.setValueAtTime(startFreq, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + 0.07);
 
-    gain.gain.setValueAtTime(0.18, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+    gain.gain.setValueAtTime(isCapture ? 0.22 : 0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
 
     osc.start();
-    osc.stop(ctx.currentTime + 0.07);
+    osc.stop(ctx.currentTime + 0.08);
   } catch {
     // Ignore audio permission restrictions
+  }
+}
+
+// Resonant success chime (harmonic major triad arpeggio: C5, E5, G5)
+export function playChimeSound(enabled = true) {
+  if (!enabled || typeof window === 'undefined') return;
+  try {
+    const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.07);
+
+      gain.gain.setValueAtTime(0.14, ctx.currentTime + idx * 0.07);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.07 + 0.35);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(ctx.currentTime + idx * 0.07);
+      osc.stop(ctx.currentTime + idx * 0.07 + 0.38);
+    });
+  } catch {
+    // Ignore audio permission restrictions
+  }
+}
+
+// Gentle failure tone for inaccurate moves/drills
+export function playFailureSound(enabled = true) {
+  if (!enabled || typeof window === 'undefined') return;
+  try {
+    const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(110, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(65, ctx.currentTime + 0.14);
+
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.15);
+  } catch {
+    // Ignore audio permission restrictions
+  }
+}
+
+// Grand milestone fanfare for graduation and major accomplishments
+export function playMilestoneFanfare(enabled = true) {
+  if (!enabled || typeof window === 'undefined') return;
+  try {
+    const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const chord = [392.00, 523.25, 659.25, 783.99, 1046.50]; // G4, C5, E5, G5, C6
+    chord.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.06);
+
+      gain.gain.setValueAtTime(0.15, ctx.currentTime + idx * 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.06 + 0.6);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(ctx.currentTime + idx * 0.06);
+      osc.stop(ctx.currentTime + idx * 0.06 + 0.65);
+    });
+  } catch {
+    // Ignore
   }
 }
 
@@ -117,8 +204,28 @@ export function renderPieceSvg(type: PieceSymbol, color: Color) {
   }
 }
 
-export const ChessBoard: React.FC<ChessBoardProps> = ({
-  initialFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+import { ChessErrorBoundary } from './ChessErrorBoundary';
+
+export const STANDARD_START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+export function createSafeChess(fen?: string): Chess {
+  if (!fen || typeof fen !== 'string') {
+    return new Chess(STANDARD_START_FEN);
+  }
+  try {
+    return new Chess(fen.trim());
+  } catch (err) {
+    console.warn('[The Homing Square] Non-standard FEN caught, using safe fallback:', fen, err);
+    try {
+      return new Chess(STANDARD_START_FEN);
+    } catch {
+      return new Chess();
+    }
+  }
+}
+
+export const ChessBoardInner: React.FC<ChessBoardProps> = ({
+  initialFen = STANDARD_START_FEN,
   onMove,
   interactive = true,
   highlightSquares = [],
@@ -128,7 +235,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   className = '',
   size = 'md'
 }) => {
-  const [chess, setChess] = useState(() => new Chess(initialFen));
+  const [chess, setChess] = useState(() => createSafeChess(initialFen));
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [legalMoves, setLegalMoves] = useState<Square[]>([]);
   const [lastMove, setLastMove] = useState<{ from: Square; to: Square } | null>(null);
@@ -137,12 +244,13 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   // Sync when initialFen changes from outside
   useEffect(() => {
     try {
-      const newGame = new Chess(initialFen);
+      const newGame = createSafeChess(initialFen);
       setChess(newGame);
       setSelectedSquare(null);
       setLegalMoves([]);
+      setLastMove(null);
     } catch {
-      // Invalid FEN fallback
+      // Invalid FEN fallback handled safely
     }
   }, [initialFen]);
 
@@ -186,14 +294,19 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       }
     }
 
-    // Select piece
-    const piece = chess.get(square);
-    if (piece && piece.color === chess.turn()) {
-      setSelectedSquare(square);
-      const moves = chess.moves({ square, verbose: true });
-      setLegalMoves(moves.map((m) => m.to));
-      playWoodenClick(true);
-    } else {
+    // Select piece safely
+    try {
+      const piece = chess.get(square);
+      if (piece && piece.color === chess.turn()) {
+        setSelectedSquare(square);
+        const moves = chess.moves({ square, verbose: true });
+        setLegalMoves(moves.map((m) => m.to));
+        playWoodenClick(true);
+      } else {
+        setSelectedSquare(null);
+        setLegalMoves([]);
+      }
+    } catch {
       setSelectedSquare(null);
       setLegalMoves([]);
     }
@@ -307,3 +420,13 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     </div>
   );
 };
+
+// Export ChessBoard wrapped with ErrorBoundary to guarantee graceful recovery
+export const ChessBoard: React.FC<ChessBoardProps> = (props) => {
+  return (
+    <ChessErrorBoundary>
+      <ChessBoardInner {...props} />
+    </ChessErrorBoundary>
+  );
+};
+export { ChessErrorBoundary };

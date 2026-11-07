@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { UserProgressState } from '../../types/chess';
 import { MODEL_WALKTHROUGH_GAME } from '../../data/modelGame';
-import { ChessBoard } from '../board/ChessBoard';
+import { ChessBoard, playWoodenClick } from '../board/ChessBoard';
+import { BoardToolbar } from '../common/BoardToolbar';
 import { NavView } from '../layout/Header';
 import { Award, CheckCircle2, AlertCircle, Printer, Share2, ArrowRight, Shield, Download } from 'lucide-react';
 
@@ -20,8 +21,32 @@ export const MasteryCheckView: React.FC<MasteryCheckProps> = ({
 }) => {
   const [activeWalkthroughStep, setActiveWalkthroughStep] = useState(0);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
+  const [boardFlipped, setBoardFlipped] = useState(false);
+  const [pawnSkeletonMode, setPawnSkeletonMode] = useState(false);
 
   const step = MODEL_WALKTHROUGH_GAME.steps[activeWalkthroughStep];
+
+  // Keyboard navigation for stepping through model game moves
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (e.key === 'ArrowRight') {
+        setActiveWalkthroughStep((prev) => {
+          const next = Math.min(MODEL_WALKTHROUGH_GAME.steps.length - 1, prev + 1);
+          if (next !== prev) playWoodenClick(progress.soundEnabled);
+          return next;
+        });
+      } else if (e.key === 'ArrowLeft') {
+        setActiveWalkthroughStep((prev) => {
+          const next = Math.max(0, prev - 1);
+          if (next !== prev) playWoodenClick(progress.soundEnabled);
+          return next;
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [progress.soundEnabled]);
 
   // The 5 Rubric Phases
   const rubricPhases = [
@@ -180,13 +205,23 @@ export const MasteryCheckView: React.FC<MasteryCheckProps> = ({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-5 flex justify-center">
+          <div className="lg:col-span-5 flex flex-col items-center justify-center">
             <ChessBoard
               initialFen={step.fen}
               interactive={false}
               size="md"
               homingSquare="c5"
               highlightSquares={step.highlightSquares}
+              flipped={boardFlipped}
+              pawnSkeletonOnly={pawnSkeletonMode}
+            />
+            <BoardToolbar
+              fen={step.fen}
+              flipped={boardFlipped}
+              onToggleFlip={() => setBoardFlipped(!boardFlipped)}
+              pawnSkeletonOnly={pawnSkeletonMode}
+              onTogglePawnSkeleton={() => setPawnSkeletonMode(!pawnSkeletonMode)}
+              className="mt-2 max-w-sm"
             />
           </div>
 

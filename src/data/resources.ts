@@ -152,10 +152,10 @@ Categorise every mistake into Perception, Visualisation, Knowledge, or Decision 
   {
     id: 'res_img_emblem',
     category: 'Visual Gallery & Assets',
-    title: 'The Homing Square Crest',
-    description: 'Official emblem on deep green.',
+    title: 'Golden Chess Academy Emblem',
+    description: 'Official Academy golden crest and emblem.',
     format: 'Image',
-    imagePath: '/assets/aistudio/The_Homing_Square_Chess_Emblem_dbf19a72.png',
+    imagePath: '/assets/aistudio/Golden_Chess_Academy_Emblem_2bfcdfbb.png',
     aspectRatio: '1:1'
   },
   {

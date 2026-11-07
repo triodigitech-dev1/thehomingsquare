@@ -228,7 +228,7 @@ export const CURRICULUM_CHAPTERS: CurriculumChapter[] = [
           'Notice how pawns dictate open files for rooks and determine whether bishops are active or imprisoned behind their own chains.',
           'Whenever you evaluate a new position, mentally strip the pieces away and examine the pawn skeleton. Where do the pawn chains point? That is where play will unfold.'
         ],
-        initialFen: '8/pp1nbppp/2p1pn2/3p4/2PP4/2N1PN2/PP2BPPP/8 w - - 0 1',
+        initialFen: 'r1bq1rk1/pp1nbppp/2p1pn2/3p4/2PP4/2N1PN2/PP2BPPP/R1BQ1RK1 w - - 4 8',
         structureId: 'carlsbad',
         checkpoint: {
           question: 'Why does Structure-First Chess teach reading the pawn skeleton before calculating piece moves?',

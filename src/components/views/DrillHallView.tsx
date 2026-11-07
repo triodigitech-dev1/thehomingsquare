@@ -1,9 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Flashcard, UserProgressState } from '../../types/chess';
 import { DRILL_FLASHCARDS } from '../../data/drills';
 import { ChessBoard, playWoodenClick } from '../board/ChessBoard';
 import { NavView } from '../layout/Header';
-import { CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
+import { StudyCard } from '../common/StudyCard';
+import { BoardToolbar } from '../common/BoardToolbar';
+import {
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  ArrowLeft,
+  Timer,
+  Flame,
+  RotateCcw,
+  Play,
+  Pause,
+  Award
+} from 'lucide-react';
 
 interface DrillHallProps {
   progress: UserProgressState;
@@ -18,19 +31,20 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
 }) => {
   const allDrills: Flashcard[] = [...DRILL_FLASHCARDS];
 
+  // Dynamically incorporate student's logged error leaks into personal drill review
   progress.loggedGames.forEach((game) => {
     game.errorLeaks.forEach((leak, idx) => {
       allDrills.push({
         id: `custom_leak_${game.id}_${idx}`,
         type: 'custom_leak',
-        category: `Logged Leak: ${leak.category}`,
-        prompt: `Game: "${game.title}" (Move ${leak.moveNumber}). ${leak.category} leak. What is the correction?`,
+        category: `Diagnostic Leak: ${leak.category}`,
+        prompt: `From game "${game.title}" (Move ${leak.moveNumber}): ${leak.category} leak. What is the disciplined correction?`,
         fen: game.fenKeyPosition || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
         options: [
           leak.lesson,
           'Ignore the opponent threat and advance a flank pawn',
-          'Offer a draw immediately',
-          'Play without running the V1 scan'
+          'Offer a draw immediately without calculation',
+          'Play instinctively without running the V1 scan protocol'
         ],
         solution: leak.lesson,
         explanation: leak.description
@@ -44,15 +58,45 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
   const [hasEvaluated, setHasEvaluated] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [sessionCompletedCount, setSessionCompletedCount] = useState(0);
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+
+  // Board toolbar states
+  const [boardFlipped, setBoardFlipped] = useState(false);
+  const [pawnSkeletonMode, setPawnSkeletonMode] = useState(false);
+
+  // 15-Minute Training Session Timer (900 seconds)
+  const [secondsRemaining, setSecondsRemaining] = useState(900);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isTimerRunning && secondsRemaining > 0) {
+      interval = setInterval(() => {
+        setSecondsRemaining((sec) => sec - 1);
+      }, 1000);
+    } else if (secondsRemaining === 0) {
+      setIsTimerRunning(false);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerRunning, secondsRemaining]);
+
+  const formatTimer = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const categories = [
-    { id: 'all', label: 'All' },
+    { id: 'all', label: 'All Drills' },
     { id: 'structure', label: 'Structures' },
     { id: 'mating_pattern', label: 'Mating Patterns' },
-    { id: 'v1_scan', label: 'V1 Scan' },
+    { id: 'v1_scan', label: 'V1 Scan Protocol' },
     { id: 'path_choice', label: 'Path Switching' },
     { id: 'defense', label: 'Defensive Fortresses' },
-    { id: 'custom_leak', label: 'Error Queue' }
+    { id: 'custom_leak', label: 'Personal Leaks' }
   ];
 
   const filteredDrills = allDrills.filter((d) => {
@@ -62,16 +106,45 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
 
   const activeDrill = filteredDrills[currentIndex % filteredDrills.length] || allDrills[0];
 
+  // Keyboard navigation: 1-4 for options, Space/Enter for Next, Arrow keys
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && activeDrill.options && num <= activeDrill.options.length) {
+        handleSelectOption(activeDrill.options[num - 1]);
+      } else if (e.key === ' ' || e.key === 'Enter') {
+        if (hasEvaluated) {
+          e.preventDefault();
+          handleNextDrill();
+        }
+      } else if (e.key === 'ArrowRight') {
+        handleNextDrill();
+      } else if (e.key === 'ArrowLeft') {
+        handlePrevDrill();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeDrill, hasEvaluated]);
+
   const handleSelectOption = (opt: string) => {
     if (hasEvaluated && isCorrect) return;
     setSelectedOption(opt);
     setHasEvaluated(true);
     const correct = opt === activeDrill.solution;
     setIsCorrect(correct);
+    playWoodenClick(progress.soundEnabled, correct);
+
     if (correct) {
-      playWoodenClick(progress.soundEnabled);
       setSessionCompletedCount((c) => c + 1);
+      const newStreak = currentStreak + 1;
+      setCurrentStreak(newStreak);
+      if (newStreak > bestStreak) setBestStreak(newStreak);
       onIncrementDrills();
+    } else {
+      setCurrentStreak(0);
     }
   };
 
@@ -82,148 +155,224 @@ export const DrillHallView: React.FC<DrillHallProps> = ({
     setCurrentIndex((prev) => (prev + 1) % filteredDrills.length);
   };
 
+  const handlePrevDrill = () => {
+    setSelectedOption(null);
+    setHasEvaluated(false);
+    setIsCorrect(false);
+    setCurrentIndex((prev) => (prev === 0 ? filteredDrills.length - 1 : prev - 1));
+  };
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Header Banner */}
-      <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="font-display text-2xl sm:text-3xl text-[#1E3A2F] tracking-tight">
-            The Drill Hall
-          </h1>
-          <p className="text-xs sm:text-sm text-[#595959] mt-1 font-sans">
-            Mating patterns, scan drills, structure flashcards, path choices, and error review.
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-sans">
+      
+      {/* Header Banner with Session Stats & Timer */}
+      <StudyCard
+        kicker="Deliberate Practice · 15-Minute Protocol"
+        title="The Drill Hall"
+        subtitle="Mating patterns, scanning protocols, structure recognition, path choices, and personal diagnostic error leaks."
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            {/* 15-Minute Training Session Timer */}
+            <div className="flex items-center gap-2 bg-[#EDE6D8] px-3 py-1.5 rounded-xl border border-[#D9CFC0]">
+              <Timer className="w-4 h-4 text-[#1E3A2F]" />
+              <span className="font-mono text-xs font-semibold text-[#1E3A2F]">
+                {formatTimer(secondsRemaining)}
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsTimerRunning(!isTimerRunning)}
+                className="p-1 text-[#1E3A2F] hover:text-[#C6A664] transition-colors"
+                title={isTimerRunning ? 'Pause timer' : 'Start 15-min drill session'}
+              >
+                {isTimerRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              </button>
+            </div>
 
-        {/* Drill Stats Counter */}
-        <div className="bg-[#EDE6D8] p-4 rounded-xl border border-[#D9CFC0] text-right shrink-0">
-          <div className="text-xs font-mono text-[#595959]">Completed</div>
-          <div className="font-display text-2xl text-[#1E3A2F] font-semibold">
-            {progress.drillsCompletedCount + sessionCompletedCount}
+            {/* Streak Counter */}
+            {currentStreak > 0 && (
+              <div className="flex items-center gap-1.5 bg-[#C6A664]/20 border border-[#C6A664] px-3 py-1.5 rounded-xl text-xs font-mono text-[#1E3A2F] font-bold">
+                <Flame className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                <span>{currentStreak} Streak</span>
+              </div>
+            )}
+
+            {/* Total Drills Counter */}
+            <div className="bg-[#EDE6D8] px-3 py-1.5 rounded-xl border border-[#D9CFC0] text-right">
+              <span className="text-[10px] font-mono text-[#595959] uppercase block leading-none">
+                Completed
+              </span>
+              <span className="font-display text-base font-semibold text-[#1E3A2F]">
+                {progress.drillsCompletedCount + sessionCompletedCount}
+              </span>
+            </div>
           </div>
+        }
+      >
+        {/* Category Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-2">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => {
+                setActiveCategory(cat.id);
+                setCurrentIndex(0);
+                setSelectedOption(null);
+                setHasEvaluated(false);
+              }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                activeCategory === cat.id
+                  ? 'bg-[#1E3A2F] text-[#F6F1E7] shadow-xs'
+                  : 'bg-[#EDE6D8] text-[#262626] hover:bg-white border border-[#D9CFC0]/60'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
         </div>
-      </div>
-
-      {/* Category Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-[#D9CFC0]/60 pb-3">
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() => {
-              setActiveCategory(cat.id);
-              setCurrentIndex(0);
-              setSelectedOption(null);
-              setHasEvaluated(false);
-            }}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-              activeCategory === cat.id
-                ? 'bg-[#1E3A2F] text-[#F6F1E7]'
-                : 'bg-[#EDE6D8] text-[#262626] hover:bg-[#FAF7F2]'
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
-      </div>
+      </StudyCard>
 
       {/* Main Drill Arena */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* Board View (6 cols) */}
-        <div className="lg:col-span-6 bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm flex flex-col items-center justify-center">
-          <div className="w-full flex items-center justify-between text-xs font-mono text-[#595959] mb-4">
-            <span className="uppercase text-[#C6A664] font-semibold">{activeDrill.category}</span>
-            <span>
-              {(currentIndex % filteredDrills.length) + 1} of {filteredDrills.length}
-            </span>
-          </div>
+        {/* Left Column: Board with Interactive Toolbar (5 cols) */}
+        <div className="lg:col-span-5 flex flex-col items-center">
+          <StudyCard
+            kicker={activeDrill.category}
+            title={`Card ${(currentIndex % filteredDrills.length) + 1} of ${filteredDrills.length}`}
+            actions={
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handlePrevDrill}
+                  title="Previous drill (Left Arrow)"
+                  className="p-1 rounded bg-[#EDE6D8] hover:bg-white text-[#1E3A2F] border border-[#D9CFC0]"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextDrill}
+                  title="Next drill (Right Arrow)"
+                  className="p-1 rounded bg-[#EDE6D8] hover:bg-white text-[#1E3A2F] border border-[#D9CFC0]"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            }
+            className="w-full flex flex-col items-center"
+          >
+            <div className="w-full flex justify-center py-1">
+              <ChessBoard
+                initialFen={activeDrill.fen}
+                interactive={false}
+                size="md"
+                homingSquare="c5"
+                flipped={boardFlipped}
+                pawnSkeletonOnly={pawnSkeletonMode}
+              />
+            </div>
 
-          <ChessBoard
-            initialFen={activeDrill.fen}
-            interactive={false}
-            size="md"
-            homingSquare="c5"
-          />
+            <BoardToolbar
+              fen={activeDrill.fen}
+              flipped={boardFlipped}
+              onToggleFlip={() => setBoardFlipped(!boardFlipped)}
+              pawnSkeletonOnly={pawnSkeletonMode}
+              onTogglePawnSkeleton={() => setPawnSkeletonMode(!pawnSkeletonMode)}
+              className="mt-3 max-w-sm"
+            />
+          </StudyCard>
         </div>
 
-        {/* Challenge & Response (6 cols) */}
-        <div className="lg:col-span-6 bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm space-y-6">
-          <h2 className="font-display text-xl sm:text-2xl text-[#1E3A2F] leading-snug">
-            {activeDrill.prompt}
-          </h2>
+        {/* Right Column: Challenge & Response Options (7 cols) */}
+        <div className="lg:col-span-7">
+          <StudyCard
+            kicker="Perception Drill"
+            title={activeDrill.prompt}
+            subtitle="Press keys 1–4 to answer immediately, or click an option below."
+          >
+            <div className="space-y-3">
+              {activeDrill.options?.map((opt, idx) => {
+                const isSelected = selectedOption === opt;
+                let btnStyle =
+                  'bg-white border-[#D9CFC0] text-[#262626] hover:border-[#1E3A2F]/60 hover:bg-[#FAF7F2]';
 
-          {/* Options */}
-          <div className="space-y-3">
-            {activeDrill.options?.map((opt, idx) => {
-              const isSelected = selectedOption === opt;
-              let btnStyle = 'bg-white border-[#D9CFC0] text-[#262626] hover:border-[#1E3A2F]';
-
-              if (hasEvaluated) {
-                if (opt === activeDrill.solution) {
-                  btnStyle = 'bg-[#1E3A2F] border-[#1E3A2F] text-[#F6F1E7] ring-1 ring-[#C6A664]';
-                } else if (isSelected && !isCorrect) {
-                  btnStyle = 'bg-[#A8553F]/15 border-[#A8553F] text-[#A8553F]';
-                } else {
-                  btnStyle = 'bg-[#FAF7F2] border-[#D9CFC0]/40 text-[#595959] opacity-60';
+                if (hasEvaluated) {
+                  if (opt === activeDrill.solution) {
+                    btnStyle = 'bg-[#1E3A2F] border-[#1E3A2F] text-[#F6F1E7] ring-1 ring-[#C6A664] shadow-xs';
+                  } else if (isSelected && !isCorrect) {
+                    btnStyle = 'bg-rose-50 border-rose-300 text-rose-900';
+                  } else {
+                    btnStyle = 'bg-[#FAF7F2]/60 border-[#D9CFC0]/40 text-[#595959] opacity-50';
+                  }
+                } else if (isSelected) {
+                  btnStyle = 'bg-[#EDE6D8] border-[#1E3A2F] text-[#1E3A2F]';
                 }
-              } else if (isSelected) {
-                btnStyle = 'bg-[#EDE6D8] border-[#1E3A2F] text-[#1E3A2F]';
-              }
 
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleSelectOption(opt)}
-                  className={`w-full text-left p-4 rounded-xl border text-xs sm:text-sm font-sans transition-all flex items-start gap-3 ${btnStyle}`}
-                >
-                  <span className="font-mono text-xs font-bold mt-0.5">
-                    {String.fromCharCode(65 + idx)}.
-                  </span>
-                  <span className="flex-1 leading-snug">{opt}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Solution & Explanation */}
-          {hasEvaluated && (
-            <div
-              className={`p-4 rounded-xl border text-xs space-y-2 animate-fadeIn ${
-                isCorrect
-                  ? 'bg-[#1E3A2F]/10 border-[#1E3A2F] text-[#1E3A2F]'
-                  : 'bg-[#A8553F]/10 border-[#A8553F] text-[#A8553F]'
-              }`}
-            >
-              <div className="font-semibold flex items-center gap-1.5">
-                {isCorrect ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-[#1E3A2F]" />
-                    <span>Correct</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="w-4 h-4 text-[#A8553F]" />
-                    <span>Incorrect</span>
-                  </>
-                )}
-              </div>
-              <p className="leading-relaxed font-sans">{activeDrill.explanation}</p>
+                return (
+                  <button
+                    key={`${opt}-${idx}`}
+                    type="button"
+                    onClick={() => handleSelectOption(opt)}
+                    className={`w-full text-left p-3.5 sm:p-4 rounded-xl border text-xs sm:text-sm font-sans transition-all flex items-start gap-3 ${btnStyle}`}
+                  >
+                    <span
+                      className={`w-5 h-5 rounded-md flex items-center justify-center font-mono text-xs font-semibold shrink-0 mt-0.5 ${
+                        hasEvaluated && opt === activeDrill.solution
+                          ? 'bg-[#C6A664] text-[#1E3A2F]'
+                          : 'bg-[#EDE6D8] text-[#595959]'
+                      }`}
+                    >
+                      {idx + 1}
+                    </span>
+                    <span className="flex-1 leading-snug">{opt}</span>
+                  </button>
+                );
+              })}
             </div>
-          )}
 
-          {/* Action Row */}
-          <div className="pt-2 flex items-center justify-end border-t border-[#D9CFC0]/60">
-            <button
-              type="button"
-              onClick={handleNextDrill}
-              className="px-4 py-2 bg-[#1E3A2F] hover:bg-[#152921] text-[#F6F1E7] text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
-            >
-              <span>Next</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#C6A664]" />
-            </button>
-          </div>
+            {/* Explanation & Solution */}
+            {hasEvaluated && (
+              <div
+                className={`mt-5 p-4 rounded-xl border text-xs space-y-2 animate-fadeIn ${
+                  isCorrect
+                    ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                    : 'bg-rose-50/80 border-rose-200 text-rose-950'
+                }`}
+              >
+                <div className="font-semibold flex items-center gap-1.5 font-display text-sm">
+                  {isCorrect ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                      <span>Verified Precision</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-4 h-4 text-rose-700" />
+                      <span>Perception Error</span>
+                    </>
+                  )}
+                </div>
+                <p className="leading-relaxed font-sans">{activeDrill.explanation}</p>
+              </div>
+            )}
+
+            {/* Next Drill Footer */}
+            <div className="mt-5 pt-3 flex items-center justify-between border-t border-[#D9CFC0]/60">
+              <span className="text-[11px] font-mono text-[#595959]">
+                Tip: Press <kbd className="px-1.5 py-0.5 bg-[#EDE6D8] rounded border border-[#D9CFC0]">Space</kbd> or <kbd className="px-1.5 py-0.5 bg-[#EDE6D8] rounded border border-[#D9CFC0]">→</kbd> for next
+              </span>
+
+              <button
+                type="button"
+                onClick={handleNextDrill}
+                className="px-4 py-2 bg-[#1E3A2F] hover:bg-[#152921] text-[#F6F1E7] text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 shadow-xs"
+              >
+                <span>Next Drill</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#C6A664]" />
+              </button>
+            </div>
+          </StudyCard>
         </div>
 
       </div>

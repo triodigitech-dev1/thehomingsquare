@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { CurriculumUnit, UserProgressState } from '../../types/chess';
 import { CURRICULUM_CHAPTERS } from '../../data/curriculum';
 import { PAWN_STRUCTURES } from '../../data/structures';
-import { ChessBoard, playWoodenClick } from '../board/ChessBoard';
+import { ChessBoard, playWoodenClick, Square } from '../board/ChessBoard';
 import { NavView } from '../layout/Header';
-import { CheckCircle2, AlertCircle, ArrowLeft, ArrowRight, BookOpen, Layers } from 'lucide-react';
+import { StudyCard } from '../common/StudyCard';
+import { BoardToolbar } from '../common/BoardToolbar';
+import { InteractiveCheckpoint } from '../common/InteractiveCheckpoint';
+import { StructurePreviewCard } from '../common/StructurePreviewCard';
+import { CheckCircle2, ArrowLeft, ArrowRight, BookOpen, Layers } from 'lucide-react';
 
 interface LessonRoomProps {
   currentUnit: CurriculumUnit;
@@ -21,19 +25,20 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
   onSelectUnit,
   onNavigate
 }) => {
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
+  const [boardFlipped, setBoardFlipped] = useState(false);
   const [pawnSkeletonMode, setPawnSkeletonMode] = useState(false);
+  const [currentFen, setCurrentFen] = useState(currentUnit.initialFen);
+  const [lastMoveSan, setLastMoveSan] = useState<string | undefined>(undefined);
+  const [moveHistory, setMoveHistory] = useState<string[]>([]);
 
   const isAlreadyCompleted = progress.completedUnitIds.includes(currentUnit.id);
 
-  // Reset answer states when unit changes
+  // Reset board states when unit changes
   useEffect(() => {
-    setSelectedAnswer(null);
-    setHasSubmitted(false);
-    setIsCorrect(false);
-  }, [currentUnit.id]);
+    setCurrentFen(currentUnit.initialFen);
+    setLastMoveSan(undefined);
+    setMoveHistory([]);
+  }, [currentUnit.id, currentUnit.initialFen]);
 
   // Find structure associated with unit if any, or default to Carlsbad
   const associatedStructure =
@@ -45,26 +50,29 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
   const prevUnit = currentIndex > 0 ? allUnits[currentIndex - 1] : null;
   const nextUnit = currentIndex < allUnits.length - 1 ? allUnits[currentIndex + 1] : null;
 
-  const handleSubmitAnswer = () => {
-    if (selectedAnswer === null) return;
-    setHasSubmitted(true);
-    const correct = selectedAnswer === currentUnit.checkpoint.correctIndex;
-    setIsCorrect(correct);
-    if (correct) {
-      playWoodenClick(progress.soundEnabled);
-      onCompleteUnit(currentUnit.id);
-    }
+  const handleBoardMove = (from: Square, to: Square, san: string, newFen: string) => {
+    setCurrentFen(newFen);
+    setLastMoveSan(san);
+    setMoveHistory((prev) => [...prev, san]);
+  };
+
+  const handleResetBoard = () => {
+    setCurrentFen(currentUnit.initialFen);
+    setLastMoveSan(undefined);
+    setMoveHistory([]);
+    playWoodenClick(progress.soundEnabled);
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Top Breadcrumb & Navigation */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 font-sans">
+      
+      {/* Top Breadcrumb & Next/Prev Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#D9CFC0]/60 pb-4">
         <div className="flex items-center gap-3 text-xs font-mono text-[#595959]">
           <button
             type="button"
             onClick={() => onNavigate('map')}
-            className="hover:text-[#1E3A2F] flex items-center gap-1 font-sans"
+            className="hover:text-[#1E3A2F] flex items-center gap-1 font-sans transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>The Map</span>
@@ -100,287 +108,148 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
       {/* 3-Column Studio Layout: Left (Outline), Center (Study & Board), Right (Structure Card) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* Left Sidebar (3 cols): Course Outline */}
-        <div className="lg:col-span-3 bg-[#FAF7F2] rounded-2xl p-5 border border-[#D9CFC0]/60 shadow-sm space-y-4 hidden lg:block">
-          <div className="border-b border-[#D9CFC0]/60 pb-3 flex items-center justify-between">
-            <div>
-              <span className="text-xs font-mono uppercase text-[#C6A664] tracking-wider block">
-                Classroom Syllabus
-              </span>
-              <span className="font-display text-sm font-semibold text-[#1E3A2F]">
-                Study Outline
-              </span>
-            </div>
-            {progress.studentAccount?.cohort && (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#EDE6D8] text-[#1E3A2F] border border-[#D9CFC0]">
-                {progress.studentAccount.cohort.split(' ')[0]}
-              </span>
-            )}
-          </div>
-
-          <div className="space-y-4 max-h-[700px] overflow-y-auto pr-1 text-xs">
-            {CURRICULUM_CHAPTERS.map((ch) => (
-              <div key={ch.id} className="space-y-1">
-                <span className="font-semibold text-[#1E3A2F] block">
-                  {ch.code}: {ch.title}
-                </span>
-                <div className="space-y-1 pl-2 border-l border-[#D9CFC0]/60">
-                  {ch.units.map((u) => {
-                    const isSelected = u.id === currentUnit.id;
-                    const isDone = progress.completedUnitIds.includes(u.id);
-                    return (
-                      <button
-                        key={u.id}
-                        type="button"
-                        onClick={() => onSelectUnit(u)}
-                        className={`w-full text-left py-1 px-2 rounded transition-colors flex items-center justify-between ${
-                          isSelected
-                            ? 'bg-[#1E3A2F] text-[#F6F1E7] font-medium'
-                            : 'text-[#595959] hover:bg-[#EDE6D8] hover:text-[#262626]'
-                        }`}
-                      >
-                        <span className="truncate">{u.unitCode}. {u.title}</span>
-                        {isDone && <CheckCircle2 className="w-3 h-3 text-[#C6A664] shrink-0" />}
-                      </button>
-                    );
-                  })}
+        {/* Left Column (3 cols): Course Outline Syllabus */}
+        <div className="lg:col-span-3 hidden lg:block">
+          <StudyCard
+            kicker="Classroom Syllabus"
+            title="Study Outline"
+            subtitle="Curriculum units across Chapters P through 8."
+          >
+            <div className="space-y-4 max-h-[700px] overflow-y-auto pr-1 text-xs">
+              {CURRICULUM_CHAPTERS.map((ch) => (
+                <div key={ch.id} className="space-y-1">
+                  <span className="font-semibold text-[#1E3A2F] block">
+                    {ch.code}: {ch.title}
+                  </span>
+                  <div className="space-y-1 pl-2 border-l border-[#D9CFC0]/60">
+                    {ch.units.map((u) => {
+                      const isSelected = u.id === currentUnit.id;
+                      const isDone = progress.completedUnitIds.includes(u.id);
+                      return (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => onSelectUnit(u)}
+                          className={`w-full text-left py-1.5 px-2 rounded-lg transition-colors flex items-center justify-between text-xs ${
+                            isSelected
+                              ? 'bg-[#1E3A2F] text-[#F6F1E7] font-medium'
+                              : 'text-[#595959] hover:bg-[#EDE6D8] hover:text-[#262626]'
+                          }`}
+                        >
+                          <span className="truncate">{u.unitCode}. {u.title}</span>
+                          {isDone && <CheckCircle2 className="w-3.5 h-3.5 text-[#C6A664] shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </StudyCard>
         </div>
 
         {/* Center Main Stage (6 cols): Unit Text, Board & Interactive Checkpoint */}
         <div className="lg:col-span-6 space-y-6">
           
-          {/* Unit Header Card */}
-          <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase tracking-widest text-[#C6A664]">
-                Unit {currentUnit.unitCode}
-              </span>
-              {isAlreadyCompleted && (
-                <div className="flex items-center gap-1.5 text-xs text-[#1E3A2F] font-semibold">
-                  <CheckCircle2 className="w-4 h-4 text-[#1E3A2F]" />
-                  <span>Checkpoint Verified</span>
+          {/* Unit Study Content Card */}
+          <StudyCard
+            kicker={`Unit ${currentUnit.unitCode}`}
+            title={currentUnit.title}
+            subtitle={currentUnit.subtitle}
+            badge={
+              isAlreadyCompleted ? (
+                <span className="flex items-center gap-1 text-xs font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Completed</span>
+                </span>
+              ) : undefined
+            }
+          >
+            <div className="space-y-4 text-xs sm:text-sm font-sans">
+              <div className="p-4 bg-[#EDE6D8]/50 rounded-xl border border-[#D9CFC0]/80 text-xs space-y-1.5">
+                <div>
+                  <strong className="text-[#1E3A2F]">What to Learn:</strong> {currentUnit.whatToLearn}
                 </div>
-              )}
-            </div>
-
-            <h1 className="font-display text-2xl sm:text-3xl text-[#1E3A2F] tracking-tight">
-              {currentUnit.title}
-            </h1>
-
-            {currentUnit.subtitle && (
-              <p className="text-sm font-sans text-[#595959] italic">
-                {currentUnit.subtitle}
-              </p>
-            )}
-
-            <div className="p-4 bg-[#EDE6D8]/50 rounded-xl border border-[#D9CFC0]/80 text-xs space-y-2">
-              <div>
-                <strong className="text-[#1E3A2F]">What to Learn:</strong> {currentUnit.whatToLearn}
+                <div>
+                  <strong className="text-[#1E3A2F]">Expected Outcome:</strong> {currentUnit.expectedOutcome}
+                </div>
               </div>
-              <div>
-                <strong className="text-[#1E3A2F]">Expected Outcome:</strong> {currentUnit.expectedOutcome}
+
+              {/* Reading Content Paragraphs */}
+              <div className="space-y-3.5 text-[#262626] leading-relaxed pt-1">
+                {currentUnit.contentParagraphs.map((para, i) => (
+                  <p key={i}>{para}</p>
+                ))}
               </div>
             </div>
-
-            {/* Reading Content Paragraphs */}
-            <div className="space-y-4 text-sm text-[#262626] leading-relaxed pt-2">
-              {currentUnit.contentParagraphs.map((para, i) => (
-                <p key={i}>{para}</p>
-              ))}
-            </div>
-          </div>
+          </StudyCard>
 
           {/* Interactive Chess Stage for this Unit */}
-          <div className="bg-[#FAF7F2] rounded-2xl p-6 border border-[#D9CFC0]/60 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-display text-lg text-[#1E3A2F]">
-                Model Position
-              </h3>
-              <button
-                type="button"
-                onClick={() => setPawnSkeletonMode(!pawnSkeletonMode)}
-                className="text-xs px-3 py-1.5 bg-[#EDE6D8] border border-[#D9CFC0] rounded-md text-[#262626] hover:bg-[#FAF7F2] transition-colors"
-              >
-                {pawnSkeletonMode ? 'Show Full Army' : 'Pawn Skeleton Only'}
-              </button>
-            </div>
-
-            <div className="flex justify-center py-2">
+          <StudyCard
+            kicker="Interactive Analysis Board"
+            title="Model Position"
+            subtitle="Explore moves on the board. Use the toolbar to view skeletons or flip coordinates."
+          >
+            <div className="flex flex-col items-center justify-center">
               <ChessBoard
-                initialFen={currentUnit.initialFen}
+                initialFen={currentFen}
                 interactive={true}
+                onMove={handleBoardMove}
                 pawnSkeletonOnly={pawnSkeletonMode}
                 homingSquare="c5"
+                flipped={boardFlipped}
                 size="md"
               />
+
+              <BoardToolbar
+                fen={currentFen}
+                flipped={boardFlipped}
+                onToggleFlip={() => setBoardFlipped(!boardFlipped)}
+                pawnSkeletonOnly={pawnSkeletonMode}
+                onTogglePawnSkeleton={() => setPawnSkeletonMode(!pawnSkeletonMode)}
+                onReset={handleResetBoard}
+                soundEnabled={progress.soundEnabled}
+                lastMoveSan={lastMoveSan}
+                moveHistory={moveHistory}
+                className="mt-3 max-w-sm"
+              />
             </div>
-          </div>
+          </StudyCard>
 
-          {/* Checkpoint */}
-          <div className="bg-[#FAF7F2] rounded-2xl p-6 sm:p-8 border border-[#D9CFC0]/60 shadow-sm space-y-5">
-            <div className="border-b border-[#D9CFC0]/60 pb-3">
-              <span className="text-xs font-mono uppercase text-[#1E3A2F] tracking-wider block mb-1">
-                Checkpoint
-              </span>
-              <h3 className="font-display text-lg text-[#1E3A2F]">
-                {currentUnit.checkpoint.question}
-              </h3>
-            </div>
-
-            {/* Radio-like options */}
-            <div className="space-y-2.5">
-              {currentUnit.checkpoint.options.map((option, idx) => {
-                const isSelected = selectedAnswer === idx;
-                let optClass = 'bg-white border-[#D9CFC0] text-[#262626] hover:border-[#1E3A2F]';
-
-                if (hasSubmitted) {
-                  if (idx === currentUnit.checkpoint.correctIndex) {
-                    optClass = 'bg-[#1E3A2F] border-[#1E3A2F] text-[#F6F1E7]';
-                  } else if (isSelected && !isCorrect) {
-                    optClass = 'bg-[#A8553F]/15 border-[#A8553F] text-[#A8553F]';
-                  } else {
-                    optClass = 'bg-[#FAF7F2] border-[#D9CFC0]/40 text-[#595959] opacity-60';
-                  }
-                } else if (isSelected) {
-                  optClass = 'bg-[#EDE6D8] border-[#1E3A2F] text-[#1E3A2F] ring-1 ring-[#1E3A2F]';
-                }
-
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      if (!hasSubmitted || !isCorrect) {
-                        setSelectedAnswer(idx);
-                        setHasSubmitted(false);
-                      }
-                    }}
-                    className={`w-full text-left p-3.5 rounded-xl border text-xs sm:text-sm font-sans transition-all flex items-start gap-3 ${optClass}`}
-                  >
-                    <span className="font-mono text-xs font-bold mt-0.5">
-                      {String.fromCharCode(65 + idx)}.
-                    </span>
-                    <span className="flex-1 leading-snug">{option}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Checkpoint Submit / Retry */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <span className="text-xs text-[#595959]">
-                Select an answer to complete the checkpoint.
-              </span>
-
-              {!hasSubmitted || !isCorrect ? (
-                <button
-                  type="button"
-                  onClick={handleSubmitAnswer}
-                  disabled={selectedAnswer === null}
-                  className="px-5 py-2 text-xs font-semibold rounded-lg bg-[#1E3A2F] text-[#F6F1E7] hover:bg-[#152921] disabled:opacity-40 transition-colors"
-                >
-                  Confirm Checkpoint
-                </button>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#1E3A2F] font-semibold">Completed</span>
-                  {nextUnit && (
-                    <button
-                      type="button"
-                      onClick={() => onSelectUnit(nextUnit)}
-                      className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#C6A664] text-[#1E3A2F] hover:bg-[#DFCA95] transition-colors"
-                    >
-                      Advance to Next Unit →
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Feedback Box */}
-            {hasSubmitted && (
-              <div
-                className={`p-4 rounded-xl border text-xs space-y-1.5 ${
-                  isCorrect
-                    ? 'bg-[#1E3A2F]/10 border-[#1E3A2F] text-[#1E3A2F]'
-                    : 'bg-[#A8553F]/10 border-[#A8553F] text-[#A8553F]'
-                }`}
-              >
-                <div className="font-semibold flex items-center gap-1.5">
-                  {isCorrect ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 text-[#1E3A2F]" />
-                      <span>Correct</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="w-4 h-4 text-[#A8553F]" />
-                      <span>Incorrect — Try again</span>
-                    </>
-                  )}
-                </div>
-                <p className="leading-relaxed">{currentUnit.checkpoint.explanation}</p>
-                {isCorrect && (
-                  <p className="font-medium pt-1 border-t border-[#1E3A2F]/20">
-                    Takeaway: {currentUnit.checkpoint.takeaway}
-                  </p>
-                )}
-              </div>
-            )}
-
-          </div>
+          {/* Checkpoint using Reusable InteractiveCheckpoint Component */}
+          <StudyCard>
+            <InteractiveCheckpoint
+              checkpoint={currentUnit.checkpoint}
+              onSuccess={() => onCompleteUnit(currentUnit.id)}
+              isAlreadyCompleted={isAlreadyCompleted}
+              soundEnabled={progress.soundEnabled}
+              onNext={nextUnit ? () => onSelectUnit(nextUnit) : undefined}
+              nextLabel="Proceed to Next Unit →"
+            />
+          </StudyCard>
 
         </div>
 
-        {/* Right Sidebar (3 cols): Persistent Structural Card */}
+        {/* Right Column (3 cols): Persistent Structure Preview Card */}
         <div className="lg:col-span-3 space-y-6">
-          <div className="bg-[#FAF7F2] rounded-2xl p-5 border border-[#D9CFC0]/60 shadow-sm space-y-4 sticky top-24">
-            <div className="border-b border-[#D9CFC0]/60 pb-3">
-              <span className="text-xs font-mono text-[#C6A664] uppercase tracking-wider block">
-                Structure
-              </span>
-              <h3 className="font-display text-lg text-[#1E3A2F]">
-                {associatedStructure.name}
-              </h3>
-            </div>
+          <div className="sticky top-20 space-y-4">
+            <StructurePreviewCard
+              structure={associatedStructure}
+              isActive={true}
+            />
 
-            <div className="space-y-3 text-xs font-sans">
-              <div>
-                <span className="font-semibold text-[#1E3A2F] block mb-1">One-Sentence Plan:</span>
-                <p className="italic text-[#262626] bg-[#EDE6D8]/60 p-2.5 rounded-lg border border-[#D9CFC0]">
-                  “{associatedStructure.oneSentencePlan}”
+            <StudyCard variant="inset" kicker="Perception Rule" title="The Three Questions">
+              <div className="space-y-2 text-xs font-sans text-[#595959]">
+                <p className="italic text-[#262626] leading-relaxed">
+                  Before calculating piece moves:
                 </p>
+                <ol className="list-decimal list-inside space-y-1 font-mono text-[11px] text-[#1E3A2F]">
+                  <li>What is the pawn structure?</li>
+                  <li>What one-sentence plan belongs to it?</li>
+                  <li>Has anything just changed?</li>
+                </ol>
               </div>
-
-              <div>
-                <span className="font-semibold text-[#1E3A2F] block mb-1">Key Breaks:</span>
-                <div className="space-y-1 text-[#595959]">
-                  <div>White: {associatedStructure.whiteBreaks.join(', ')}</div>
-                  <div>Black: {associatedStructure.blackBreaks.join(', ')}</div>
-                </div>
-              </div>
-
-              <div>
-                <span className="font-semibold text-[#1E3A2F] block mb-1">Key Outposts:</span>
-                <p className="text-[#595959]">{associatedStructure.keyOutposts.join(', ')}</p>
-              </div>
-
-              <div>
-                <span className="font-semibold text-[#1E3A2F] block mb-1">Static Weaknesses:</span>
-                <p className="text-[#595959]">{associatedStructure.weaknesses.join(', ')}</p>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-[#D9CFC0]/60 text-[11px] text-[#595959] space-y-1">
-              <span className="font-semibold text-[#1E3A2F] block">Core Question:</span>
-              <p className="italic text-[#262626]">
-                What is the structure, what plan belongs to it, and has anything just changed?
-              </p>
-            </div>
+            </StudyCard>
           </div>
         </div>
 

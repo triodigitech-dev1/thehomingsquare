@@ -134,6 +134,7 @@ export interface StudentAccount {
   tier: 'Foundations (Elo 1000–1600)' | 'Mastery (Elo 1600–2200)' | 'Candidate (Elo 2200+)';
   enrolledDate: string;
   status: 'Active Scholar' | 'Graduation Candidate' | 'Alumnus';
+  role?: 'student' | 'instructor' | 'admin';
 }
 
 export interface UserProgressState {

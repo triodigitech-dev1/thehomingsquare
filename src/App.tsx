@@ -4,8 +4,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Analytics } from '@vercel/analytics/react';
+// Strip @vercel/analytics per AI Studio platform requirements
+const Analytics = () => null;
 import { Header, NavView } from './components/layout/Header';
+import { AcademySidebar } from './components/layout/AcademySidebar';
 import { DoorView } from './components/views/DoorView';
 import { CockpitView } from './components/views/CockpitView';
 import { MapView } from './components/views/MapView';
@@ -22,13 +24,14 @@ import { UserProgressState, CurriculumUnit, LoggedGame, ConversionPath, StudentA
 import { CURRICULUM_CHAPTERS } from './data/curriculum';
 import { PAWN_STRUCTURES } from './data/structures';
 import { INITIAL_LOGGED_GAMES } from './data/loggedGames';
-import { Download } from 'lucide-react';
+import { Download, Compass, Lock } from 'lucide-react';
 
 const STORAGE_KEY = 'homing_square_progress_v1';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<NavView>('door');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentUnit, setCurrentUnit] = useState<CurriculumUnit>(() => {
     return CURRICULUM_CHAPTERS[2].units[0]; // Unit 2.1: Pawn Structures
   });
@@ -184,7 +187,55 @@ export default function App() {
         onToggleSound={handleToggleSound}
         studentAccount={progress.studentAccount}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+        isSidebarOpen={isSidebarOpen}
       />
+
+      {/* Permissions-Based Academy Sidebar Drawer */}
+      <AcademySidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        currentView={currentView}
+        onNavigate={setCurrentView}
+        studentAccount={progress.studentAccount}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        progress={progress}
+        onToggleSound={handleToggleSound}
+        onSignOut={() => {
+          setProgress((prev) => ({
+            ...prev,
+            studentAccount: prev.studentAccount
+              ? { ...prev.studentAccount, isAuthenticated: false }
+              : undefined
+          }));
+          setIsSidebarOpen(false);
+          setCurrentView('door');
+        }}
+      />
+
+      {/* Guest Notice for Academic Quarters */}
+      {!progress.studentAccount?.isAuthenticated &&
+        ['cockpit', 'lesson', 'drills', 'log', 'mastery', 'passport'].includes(currentView) && (
+          <div className="bg-[#1E3A2F] text-[#F6F1E7] border-b border-[#C6A664]/30 px-4 py-2.5 shadow-xs">
+            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 text-center sm:text-left">
+                <span className="px-2 py-0.5 rounded bg-[#C6A664]/20 text-[#DFCA95] font-mono text-[10px] uppercase font-semibold border border-[#C6A664]/40">
+                  Guest Preview
+                </span>
+                <span className="text-[#D9CFC0]">
+                  You are previewing this study quarter. Enrol as an active scholar to record diagnostic logs and save your progress.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAuthModalOpen(true)}
+                className="px-3 py-1 bg-[#C6A664] hover:bg-[#DFCA95] text-[#1E3A2F] font-semibold text-xs rounded transition-colors whitespace-nowrap shadow-xs"
+              >
+                Enrol as Scholar
+              </button>
+            </div>
+          </div>
+        )}
 
       {/* Main Content Area */}
       <main className="flex-1">
@@ -204,6 +255,7 @@ export default function App() {
             onSetPath={handleSetPath}
             onNavigate={setCurrentView}
             onSelectStructure={handleSelectStructure}
+            onToggleSound={handleToggleSound}
           />
         )}
 
@@ -255,6 +307,7 @@ export default function App() {
           <CommonsView
             onNavigate={setCurrentView}
             onSelectStructure={handleSelectStructure}
+            soundEnabled={progress.soundEnabled}
           />
         )}
 
@@ -263,18 +316,41 @@ export default function App() {
             progress={progress}
             onNavigate={setCurrentView}
             onUpdateName={handleUpdateStudentName}
+            soundEnabled={progress.soundEnabled}
           />
         )}
 
         {currentView === 'workshop' && (
           <WorkshopView
             onNavigate={setCurrentView}
+            soundEnabled={progress.soundEnabled}
           />
         )}
 
         {currentView === 'resources' && (
           <ResourcesView
             onNavigate={setCurrentView}
+            soundEnabled={progress.soundEnabled}
+            studentAccount={progress.studentAccount}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
+            onSwitchToAdmin={() => {
+              setProgress((prev) => ({
+                ...prev,
+                studentAccount: prev.studentAccount
+                  ? { ...prev.studentAccount, role: 'admin', isAuthenticated: true }
+                  : {
+                      isAuthenticated: true,
+                      studentId: 'HS-ADM-1001',
+                      fullName: 'Archivist Thorne (Admin)',
+                      email: 'admin@homingsquare.org',
+                      cohort: 'Faculty Curators',
+                      tier: 'Candidate (Elo 2200+)',
+                      enrolledDate: '2026-01-01',
+                      status: 'Alumnus',
+                      role: 'admin'
+                    }
+              }));
+            }}
           />
         )}
       </main>
@@ -297,8 +373,8 @@ export default function App() {
             <div className="flex items-center gap-3">
               <div className="w-7 h-7 rounded-lg overflow-hidden bg-[#152921] border border-[#C6A664]/50 flex items-center justify-center p-0.5">
                 <img
-                  src="/assets/aistudio/The_Homing_Square_Chess_Emblem_dbf19a72.png"
-                  alt="Emblem"
+                  src="/assets/aistudio/Golden_Chess_Academy_Emblem_2bfcdfbb.png"
+                  alt="Golden Chess Academy Emblem"
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -322,59 +398,10 @@ export default function App() {
             </button>
             <button
               type="button"
-              onClick={() => setCurrentView('cockpit')}
-              className="hover:text-[#F6F1E7] transition-colors"
-            >
-              The Cockpit
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentView('map')}
-              className="hover:text-[#F6F1E7] transition-colors"
-            >
-              The Map
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentView('lesson')}
-              className="hover:text-[#F6F1E7] transition-colors"
-            >
-              Classroom
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentView('drills')}
-              className="hover:text-[#F6F1E7] transition-colors"
-            >
-              Drill Hall
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentView('log')}
-              className="hover:text-[#F6F1E7] transition-colors"
-            >
-              The Log
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentView('mastery')}
-              className="hover:text-[#F6F1E7] transition-colors"
-            >
-              Mastery Check
-            </button>
-            <button
-              type="button"
               onClick={() => setCurrentView('commons')}
               className="hover:text-[#F6F1E7] transition-colors"
             >
               The Commons
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentView('passport')}
-              className="hover:text-[#F6F1E7] transition-colors"
-            >
-              The Passport
             </button>
             <button
               type="button"
@@ -386,9 +413,18 @@ export default function App() {
             <button
               type="button"
               onClick={() => setCurrentView('resources')}
-              className="hover:text-[#C6A664] transition-colors font-semibold"
+              className="hover:text-[#F6F1E7] transition-colors"
             >
               The Library
+            </button>
+            <span className="text-[#C6A664]/40 hidden sm:inline">|</span>
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className="text-[#C6A664] hover:text-[#DFCA95] transition-colors flex items-center gap-1 font-medium"
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>Academic Quarters</span>
             </button>
           </div>
 
