@@ -229,7 +229,7 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
 
             {/* Bottom Syllabus Tip */}
             <div className="pt-2 border-t border-[#D9CFC0] text-[11px] text-[#8C7A6B] font-mono flex items-center justify-between">
-              <span>9 Regions Cartography</span>
+              <span>{CURRICULUM_CHAPTERS.length} Chapters Cartography</span>
               <button
                 type="button"
                 onClick={() => onNavigate('map')}
@@ -410,25 +410,63 @@ export const LessonRoomView: React.FC<LessonRoomProps> = ({
                     </div>
                   </div>
 
-                  <figure className="rounded-xl border border-dashed border-[#C6A664] bg-[#F5EFE6] shadow-xs">
-                    <div className="min-h-36 p-4 flex flex-col justify-center gap-2">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#8C6D28] font-semibold">
-                        Image placement note
-                      </span>
-                      <h3 className="font-display text-sm font-semibold text-[#1E3A2F]">
-                        {visualPlaceholder.title}
-                      </h3>
-                      <p className="text-xs leading-relaxed text-[#595959]">
-                        {visualPlaceholder.description}
-                      </p>
-                      <p className="text-[10px] leading-relaxed text-[#8C7A6B] font-mono border-t border-[#D9CFC0] pt-2">
-                        Asset to source: {visualPlaceholder.plannedAsset}
-                      </p>
-                    </div>
-                    <figcaption className="px-4 py-2 text-[10px] leading-relaxed text-[#8C7A6B] font-mono border-t border-[#D9CFC0]">
-                      Placeholder only — replace with the verified downloaded image before publication.
-                    </figcaption>
-                  </figure>
+                  {/* Visual Placement or Verified Inserted Asset */}
+                  {visualPlaceholder.assetStatus === 'INSERTED' && visualPlaceholder.assetPath ? (
+                    <figure className="rounded-xl border border-[#1E3A2F]/30 bg-white overflow-hidden shadow-xs">
+                      <div className="bg-[#152921] p-3 text-center border-b border-[#D9CFC0]">
+                        <img
+                          src={visualPlaceholder.assetPath}
+                          alt={visualPlaceholder.title}
+                          className="max-h-72 mx-auto rounded-lg object-contain shadow-xs border border-white/20"
+                        />
+                      </div>
+                      <figcaption className="p-3 text-xs text-[#262626] bg-[#FAF7F2] space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-[#1E3A2F] text-[11px] font-mono uppercase">
+                            {visualPlaceholder.title}
+                          </span>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold">
+                            Verified Asset · INSERTED
+                          </span>
+                        </div>
+                        <p className="text-[#595959] text-xs leading-relaxed">
+                          {visualPlaceholder.description}
+                        </p>
+                        {visualPlaceholder.attribution && (
+                          <div className="text-[10px] font-mono text-[#8C7A6B] pt-1.5 border-t border-[#D9CFC0] flex flex-wrap items-center justify-between gap-1">
+                            <span>Licence: {visualPlaceholder.license}</span>
+                            <span className="truncate max-w-xs">{visualPlaceholder.attribution}</span>
+                          </div>
+                        )}
+                      </figcaption>
+                    </figure>
+                  ) : (
+                    <figure className="rounded-xl border-2 border-dashed border-[#C6A664] bg-[#F5EFE6] shadow-xs overflow-hidden">
+                      <div className="p-4 flex flex-col justify-center gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-[#8C6D28] font-bold bg-[#EDE6D8] px-2 py-0.5 rounded">
+                            Visual Placement Brief
+                          </span>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-semibold">
+                            PLACEHOLDER · Not Yet Inserted
+                          </span>
+                        </div>
+                        <h3 className="font-display text-sm font-semibold text-[#1E3A2F]">
+                          {visualPlaceholder.title}
+                        </h3>
+                        <p className="text-xs leading-relaxed text-[#595959]">
+                          {visualPlaceholder.description}
+                        </p>
+                        <div className="pt-2 border-t border-[#D9CFC0] text-[10px] font-mono text-[#8C7A6B] space-y-0.5">
+                          <div><strong className="text-[#1E3A2F]">Concept:</strong> {visualPlaceholder.title}</div>
+                          <div><strong className="text-[#1E3A2F]">Required Asset:</strong> {visualPlaceholder.plannedAsset}</div>
+                        </div>
+                      </div>
+                      <figcaption className="px-4 py-2 text-[10px] leading-relaxed text-[#8C7A6B] font-mono border-t border-[#D9CFC0] bg-[#EDE6D8]/50">
+                        Asset status: not inserted yet. Source a downloaded public-domain or Creative Commons file, verify the file-level licence, and add attribution before publication.
+                      </figcaption>
+                    </figure>
+                  )}
 
                   {/* Reading Paragraphs with Bounded Scroll */}
                   <div className="space-y-2.5 max-h-[310px] overflow-y-auto pr-1 text-xs text-[#262626] leading-relaxed font-sans">

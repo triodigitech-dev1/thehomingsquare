@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Chess, Square, PieceSymbol, Color } from 'chess.js';
+import { ChessErrorBoundary } from './ChessErrorBoundary';
 
 interface ChessBoardProps {
   initialFen?: string;
@@ -11,44 +12,88 @@ interface ChessBoardProps {
   flipped?: boolean;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  showCapturedPieces?: boolean;
+  showTurnStatus?: boolean;
+  soundEnabled?: boolean;
 }
 
 export type { Square, PieceSymbol, Color };
 
-// Gentle wooden tap using Web Audio API
-export function playWoodenClick(enabled = true, isCapture = false) {
+// Audio synthesizers via Web Audio API
+export function playMoveSound(enabled = true, isCapture = false, isCheck = false, isCastling = false) {
   if (!enabled || typeof window === 'undefined') return;
   try {
-    const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+    const AudioContext =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
     if (!AudioContext) return;
     const ctx = new AudioContext();
+
+    if (isCheck) {
+      // Alerting double check chime
+      [587.33, 880].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.08);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.08 + 0.2);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + i * 0.08);
+        osc.stop(ctx.currentTime + i * 0.08 + 0.22);
+      });
+      return;
+    }
+
+    if (isCastling) {
+      // Double wooden tap
+      [0, 0.08].forEach((delay) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(160, ctx.currentTime + delay);
+        osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + delay + 0.05);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.05);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.06);
+      });
+      return;
+    }
+
+    // Capture or normal move
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-
     osc.type = isCapture ? 'square' : 'triangle';
-    const startFreq = isCapture ? 190 : 140;
-    const endFreq = isCapture ? 60 : 45;
+    const startFreq = isCapture ? 200 : 145;
+    const endFreq = isCapture ? 55 : 45;
     osc.frequency.setValueAtTime(startFreq, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + 0.07);
-
-    gain.gain.setValueAtTime(isCapture ? 0.22 : 0.18, ctx.currentTime);
+    gain.gain.setValueAtTime(isCapture ? 0.24 : 0.18, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
-
     osc.connect(gain);
     gain.connect(ctx.destination);
-
     osc.start();
     osc.stop(ctx.currentTime + 0.08);
   } catch {
-    // Ignore audio permission restrictions
+    // Audio context permission restrictions ignored
   }
 }
 
-// Resonant success chime (harmonic major triad arpeggio: C5, E5, G5)
+export function playWoodenClick(enabled = true, isCapture = false) {
+  playMoveSound(enabled, isCapture, false, false);
+}
+
+// Resonant success chime
 export function playChimeSound(enabled = true) {
   if (!enabled || typeof window === 'undefined') return;
   try {
-    const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+    const AudioContext =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
     if (!AudioContext) return;
     const ctx = new AudioContext();
     const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
@@ -57,18 +102,15 @@ export function playChimeSound(enabled = true) {
       const gain = ctx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.07);
-
       gain.gain.setValueAtTime(0.14, ctx.currentTime + idx * 0.07);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.07 + 0.35);
-
       osc.connect(gain);
       gain.connect(ctx.destination);
-
       osc.start(ctx.currentTime + idx * 0.07);
       osc.stop(ctx.currentTime + idx * 0.07 + 0.38);
     });
   } catch {
-    // Ignore audio permission restrictions
+    // Ignore
   }
 }
 
@@ -76,26 +118,24 @@ export function playChimeSound(enabled = true) {
 export function playFailureSound(enabled = true) {
   if (!enabled || typeof window === 'undefined') return;
   try {
-    const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+    const AudioContext =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
     if (!AudioContext) return;
     const ctx = new AudioContext();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(110, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(65, ctx.currentTime + 0.14);
-
     gain.gain.setValueAtTime(0.12, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
-
     osc.connect(gain);
     gain.connect(ctx.destination);
-
     osc.start();
     osc.stop(ctx.currentTime + 0.15);
   } catch {
-    // Ignore audio permission restrictions
+    // Ignore
   }
 }
 
@@ -103,7 +143,9 @@ export function playFailureSound(enabled = true) {
 export function playMilestoneFanfare(enabled = true) {
   if (!enabled || typeof window === 'undefined') return;
   try {
-    const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+    const AudioContext =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
     if (!AudioContext) return;
     const ctx = new AudioContext();
     const chord = [392.00, 523.25, 659.25, 783.99, 1046.50]; // G4, C5, E5, G5, C6
@@ -112,13 +154,10 @@ export function playMilestoneFanfare(enabled = true) {
       const gain = ctx.createGain();
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.06);
-
       gain.gain.setValueAtTime(0.15, ctx.currentTime + idx * 0.06);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.06 + 0.6);
-
       osc.connect(gain);
       gain.connect(ctx.destination);
-
       osc.start(ctx.currentTime + idx * 0.06);
       osc.stop(ctx.currentTime + idx * 0.06 + 0.65);
     });
@@ -204,8 +243,6 @@ export function renderPieceSvg(type: PieceSymbol, color: Color) {
   }
 }
 
-import { ChessErrorBoundary } from './ChessErrorBoundary';
-
 export const STANDARD_START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 export function createSafeChess(fen?: string): Chess {
@@ -224,6 +261,67 @@ export function createSafeChess(fen?: string): Chess {
   }
 }
 
+// Calculate captured pieces & material difference
+function getCapturedPieces(chess: Chess) {
+  const startingCounts: Record<Color, Record<PieceSymbol, number>> = {
+    w: { p: 8, n: 2, b: 2, r: 2, q: 1, k: 1 },
+    b: { p: 8, n: 2, b: 2, r: 2, q: 1, k: 1 }
+  };
+
+  const currentCounts: Record<Color, Record<PieceSymbol, number>> = {
+    w: { p: 0, n: 0, b: 0, r: 0, q: 0, k: 0 },
+    b: { p: 0, n: 0, b: 0, r: 0, q: 0, k: 0 }
+  };
+
+  const board = chess.board();
+  for (const row of board) {
+    for (const square of row) {
+      if (square) {
+        currentCounts[square.color][square.type]++;
+      }
+    }
+  }
+
+  const pieceValues: Record<PieceSymbol, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+  const capturedByWhite: PieceSymbol[] = [];
+  const capturedByBlack: PieceSymbol[] = [];
+
+  let whitePoints = 0;
+  let blackPoints = 0;
+
+  (['q', 'r', 'b', 'n', 'p'] as PieceSymbol[]).forEach((p) => {
+    // White captured black pieces
+    const diffBlack = startingCounts.b[p] - currentCounts.b[p];
+    for (let i = 0; i < diffBlack; i++) {
+      capturedByWhite.push(p);
+      whitePoints += pieceValues[p];
+    }
+    // Black captured white pieces
+    const diffWhite = startingCounts.w[p] - currentCounts.w[p];
+    for (let i = 0; i < diffWhite; i++) {
+      capturedByBlack.push(p);
+      blackPoints += pieceValues[p];
+    }
+  });
+
+  return {
+    capturedByWhite,
+    capturedByBlack,
+    whiteAdvantage: whitePoints - blackPoints
+  };
+}
+
+interface PendingPromotion {
+  from: Square;
+  to: Square;
+  color: Color;
+}
+
+interface Arrow {
+  from: Square;
+  to: Square;
+}
+
 export const ChessBoardInner: React.FC<ChessBoardProps> = ({
   initialFen = STANDARD_START_FEN,
   onMove,
@@ -233,12 +331,27 @@ export const ChessBoardInner: React.FC<ChessBoardProps> = ({
   pawnSkeletonOnly = false,
   flipped = false,
   className = '',
-  size = 'md'
+  size = 'md',
+  showCapturedPieces = true,
+  showTurnStatus = true,
+  soundEnabled = true
 }) => {
   const [chess, setChess] = useState(() => createSafeChess(initialFen));
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [legalMoves, setLegalMoves] = useState<Square[]>([]);
   const [lastMove, setLastMove] = useState<{ from: Square; to: Square } | null>(null);
+  
+  // Drag-and-drop state
+  const [draggedSquare, setDraggedSquare] = useState<Square | null>(null);
+
+  // Promotion selector state (Lichess/Chess.com style)
+  const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
+
+  // Right-click highlights & arrows (Lichess/Chess.com style)
+  const [rightClickHighlights, setRightClickHighlights] = useState<Set<Square>>(new Set());
+  const [arrows, setArrows] = useState<Arrow[]>([]);
+  const [arrowStart, setArrowStart] = useState<Square | null>(null);
+
   const boardRef = useRef<HTMLDivElement>(null);
 
   // Sync when initialFen changes from outside
@@ -249,8 +362,11 @@ export const ChessBoardInner: React.FC<ChessBoardProps> = ({
       setSelectedSquare(null);
       setLegalMoves([]);
       setLastMove(null);
+      setPendingPromotion(null);
+      setRightClickHighlights(new Set());
+      setArrows([]);
     } catch {
-      // Invalid FEN fallback handled safely
+      // Fallback handled safely
     }
   }, [initialFen]);
 
@@ -260,10 +376,83 @@ export const ChessBoardInner: React.FC<ChessBoardProps> = ({
   const displayFiles = flipped ? [...files].reverse() : files;
   const displayRanks = flipped ? [...ranks].reverse() : ranks;
 
+  // Find King square if in check
+  const inCheck = chess.inCheck();
+  let checkedKingSquare: Square | null = null;
+  if (inCheck) {
+    const turn = chess.turn();
+    for (const r of ranks) {
+      for (const f of files) {
+        const sq = `${f}${r}` as Square;
+        const p = chess.get(sq);
+        if (p && p.type === 'k' && p.color === turn) {
+          checkedKingSquare = sq;
+          break;
+        }
+      }
+      if (checkedKingSquare) break;
+    }
+  }
+
+  // Execute move helper
+  const executeMove = (from: Square, to: Square, promoPiece: 'q' | 'r' | 'b' | 'n' = 'q') => {
+    try {
+      const isCastling = (from === 'e1' && (to === 'g1' || to === 'c1')) || (from === 'e8' && (to === 'g8' || to === 'c8'));
+      const targetPiece = chess.get(to);
+      const isCapture = Boolean(targetPiece);
+
+      const move = chess.move({
+        from,
+        to,
+        promotion: promoPiece
+      });
+
+      if (move) {
+        const causesCheck = chess.inCheck();
+        playMoveSound(soundEnabled, isCapture, causesCheck, isCastling);
+
+        setLastMove({ from, to });
+        setSelectedSquare(null);
+        setLegalMoves([]);
+        setPendingPromotion(null);
+        setRightClickHighlights(new Set());
+        setArrows([]);
+
+        if (onMove) {
+          onMove(from, to, move.san, chess.fen());
+        }
+        return true;
+      }
+    } catch {
+      // Not legal
+    }
+    return false;
+  };
+
+  // Check if a move requires promotion
+  const isPromotionMove = (from: Square, to: Square): boolean => {
+    const piece = chess.get(from);
+    if (!piece || piece.type !== 'p') return false;
+    const destRank = to[1];
+    return (piece.color === 'w' && destRank === '8') || (piece.color === 'b' && destRank === '1');
+  };
+
+  // Click handler
   const handleSquareClick = (square: Square) => {
     if (!interactive) return;
 
-    // If already selected, try to move
+    // Clear user annotations on left click
+    if (rightClickHighlights.size > 0 || arrows.length > 0) {
+      setRightClickHighlights(new Set());
+      setArrows([]);
+    }
+
+    // If a promotion modal is active, clicking away dismisses it
+    if (pendingPromotion) {
+      setPendingPromotion(null);
+      return;
+    }
+
     if (selectedSquare) {
       if (selectedSquare === square) {
         setSelectedSquare(null);
@@ -271,37 +460,33 @@ export const ChessBoardInner: React.FC<ChessBoardProps> = ({
         return;
       }
 
-      // Attempt move
-      try {
-        const move = chess.move({
-          from: selectedSquare,
-          to: square,
-          promotion: 'q'
-        });
-
-        if (move) {
-          playWoodenClick(true);
-          setLastMove({ from: selectedSquare, to: square });
-          setSelectedSquare(null);
-          setLegalMoves([]);
-          if (onMove) {
-            onMove(selectedSquare, square, move.san, chess.fen());
-          }
+      // Check if promotion is needed
+      if (isPromotionMove(selectedSquare, square)) {
+        const moves = chess.moves({ square: selectedSquare, verbose: true });
+        const canMoveTo = moves.some((m) => m.to === square);
+        if (canMoveTo) {
+          setPendingPromotion({
+            from: selectedSquare,
+            to: square,
+            color: chess.get(selectedSquare)!.color
+          });
           return;
         }
-      } catch {
-        // Not a legal move to that square, proceed to select new piece if friendly
       }
+
+      // Try executing move
+      const moved = executeMove(selectedSquare, square);
+      if (moved) return;
     }
 
-    // Select piece safely
+    // Select piece
     try {
       const piece = chess.get(square);
       if (piece && piece.color === chess.turn()) {
         setSelectedSquare(square);
         const moves = chess.moves({ square, verbose: true });
         setLegalMoves(moves.map((m) => m.to));
-        playWoodenClick(true);
+        playMoveSound(soundEnabled, false, false, false);
       } else {
         setSelectedSquare(null);
         setLegalMoves([]);
@@ -312,20 +497,188 @@ export const ChessBoardInner: React.FC<ChessBoardProps> = ({
     }
   };
 
+  // HTML5 Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, square: Square) => {
+    if (!interactive) return;
+    const piece = chess.get(square);
+    if (!piece || piece.color !== chess.turn()) {
+      e.preventDefault();
+      return;
+    }
+    setDraggedSquare(square);
+    setSelectedSquare(square);
+    const moves = chess.moves({ square, verbose: true });
+    setLegalMoves(moves.map((m) => m.to));
+
+    // Clear annotations
+    setRightClickHighlights(new Set());
+    setArrows([]);
+
+    e.dataTransfer.setData('text/plain', square);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!interactive || !draggedSquare) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetSquare: Square) => {
+    if (!interactive || !draggedSquare) return;
+    e.preventDefault();
+
+    if (draggedSquare === targetSquare) {
+      setDraggedSquare(null);
+      return;
+    }
+
+    if (isPromotionMove(draggedSquare, targetSquare)) {
+      const moves = chess.moves({ square: draggedSquare, verbose: true });
+      if (moves.some((m) => m.to === targetSquare)) {
+        setPendingPromotion({
+          from: draggedSquare,
+          to: targetSquare,
+          color: chess.get(draggedSquare)!.color
+        });
+        setDraggedSquare(null);
+        return;
+      }
+    }
+
+    executeMove(draggedSquare, targetSquare);
+    setDraggedSquare(null);
+  };
+
+  // Right-click annotation handlers (Lichess/Chess.com style)
+  const handleMouseDown = (e: React.MouseEvent, square: Square) => {
+    if (e.button === 2) {
+      // Right click start
+      e.preventDefault();
+      setArrowStart(square);
+    }
+  };
+
+  const handleMouseUp = (e: React.MouseEvent, square: Square) => {
+    if (e.button === 2) {
+      e.preventDefault();
+      if (arrowStart) {
+        if (arrowStart === square) {
+          // Toggle highlight
+          setRightClickHighlights((prev) => {
+            const next = new Set(prev);
+            if (next.has(square)) next.delete(square);
+            else next.add(square);
+            return next;
+          });
+        } else {
+          // Toggle arrow
+          setArrows((prev) => {
+            const exists = prev.some((a) => a.from === arrowStart && a.to === square);
+            if (exists) {
+              return prev.filter((a) => !(a.from === arrowStart && a.to === square));
+            }
+            return [...prev, { from: arrowStart, to: square }];
+          });
+        }
+      }
+      setArrowStart(null);
+    }
+  };
+
+  // Helper for arrow coordinates (percentage 0 to 100)
+  const getSquareCoordinates = (sq: Square) => {
+    const f = sq[0];
+    const r = sq[1];
+    const fIdx = displayFiles.indexOf(f);
+    const rIdx = displayRanks.indexOf(r);
+    const x = (fIdx + 0.5) * 12.5;
+    const y = (rIdx + 0.5) * 12.5;
+    return { x, y };
+  };
+
+  const { capturedByWhite, capturedByBlack, whiteAdvantage } = getCapturedPieces(chess);
+
   const sizeClasses = {
     sm: 'w-[280px] h-[280px]',
     md: 'w-[360px] h-[360px] sm:w-[420px] sm:h-[420px]',
     lg: 'w-[380px] h-[380px] sm:w-[480px] sm:h-[480px] md:w-[540px] md:h-[540px]'
   }[size];
 
+  // Game state description
+  let statusBadge = null;
+  if (showTurnStatus) {
+    if (chess.isGameOver()) {
+      let message = 'Game Over';
+      if (chess.isCheckmate()) {
+        message = chess.turn() === 'w' ? 'Checkmate · Black Wins' : 'Checkmate · White Wins';
+      } else if (chess.isStalemate()) {
+        message = 'Draw · Stalemate';
+      } else if (chess.isThreefoldRepetition()) {
+        message = 'Draw · Threefold Repetition';
+      } else if (chess.isInsufficientMaterial()) {
+        message = 'Draw · Insufficient Material';
+      }
+      statusBadge = (
+        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-emerald-900 text-emerald-100 border border-emerald-500 shadow-xs">
+          {message}
+        </span>
+      );
+    } else if (inCheck) {
+      statusBadge = (
+        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-red-900/90 text-red-200 border border-red-500 animate-pulse">
+          {chess.turn() === 'w' ? 'White King in Check!' : 'Black King in Check!'}
+        </span>
+      );
+    } else {
+      statusBadge = (
+        <span className="flex items-center gap-1.5 text-[11px] font-mono text-[#595959]">
+          <span
+            className={`w-2 h-2 rounded-full border border-black/30 ${
+              chess.turn() === 'w' ? 'bg-white' : 'bg-[#152921]'
+            }`}
+          />
+          <span>{chess.turn() === 'w' ? 'White to move' : 'Black to move'}</span>
+        </span>
+      );
+    }
+  }
+
+  // Top and bottom captured trays
+  const topCaptured = flipped ? capturedByBlack : capturedByWhite;
+  const bottomCaptured = flipped ? capturedByWhite : capturedByBlack;
+  const topAdvantage = flipped ? -whiteAdvantage : whiteAdvantage;
+  const bottomAdvantage = flipped ? whiteAdvantage : -whiteAdvantage;
+
   return (
     <div className={`relative flex flex-col items-center select-none ${className}`}>
+      
+      {/* Top Bar: Opponent Captured Pieces & Advantage */}
+      {showCapturedPieces && size !== 'sm' && (
+        <div className="w-full flex items-center justify-between px-2 py-1 text-xs text-[#595959] font-mono mb-1">
+          <div className="flex items-center gap-1 min-h-5 flex-wrap">
+            {topCaptured.map((p, i) => (
+              <span key={i} className="w-4 h-4 inline-flex items-center justify-center opacity-85">
+                {renderPieceSvg(p, flipped ? 'w' : 'b')}
+              </span>
+            ))}
+            {topAdvantage > 0 && (
+              <span className="text-[10px] font-bold text-[#1E3A2F] bg-[#FAF7F2] px-1 rounded border border-[#D9CFC0]">
+                +{topAdvantage}
+              </span>
+            )}
+          </div>
+          {statusBadge}
+        </div>
+      )}
+
       {/* Board Outer Container styled like a crafted wooden study tray */}
       <div
         ref={boardRef}
+        onContextMenu={(e) => e.preventDefault()}
         className={`${sizeClasses} relative rounded-xl p-2.5 bg-[#1E3A2F] shadow-xl border border-[#C6A664]/30`}
       >
-        <div className="w-full h-full grid grid-cols-8 grid-rows-8 rounded-lg overflow-hidden border border-[#D9CFC0]/40">
+        <div className="relative w-full h-full grid grid-cols-8 grid-rows-8 rounded-lg overflow-hidden border border-[#D9CFC0]/40">
           {displayRanks.map((rank, rIdx) =>
             displayFiles.map((file, fIdx) => {
               const square = `${file}${rank}` as Square;
@@ -337,15 +690,18 @@ export const ChessBoardInner: React.FC<ChessBoardProps> = ({
               const isHoming = homingSquare === square;
               const isLastMoveFrom = lastMove?.from === square;
               const isLastMoveTo = lastMove?.to === square;
+              const isKingChecked = checkedKingSquare === square;
+              const isRightClickHighlighted = rightClickHighlights.has(square);
 
               // Hide pieces if pawnSkeletonOnly is active, unless it's a pawn
               const showPiece = piece && (!pawnSkeletonOnly || piece.type === 'p');
 
               // Colors based on brand guidelines
-              // Classic board: cream #F0D9B5 light squares, #B58863 dark squares
               let squareBg = isLight ? 'bg-[#F0D9B5]' : 'bg-[#B58863]';
 
-              if (isSelected) {
+              if (isKingChecked) {
+                squareBg = 'bg-red-500/80 ring-4 ring-red-600 ring-inset';
+              } else if (isSelected) {
                 squareBg = 'bg-[#C6A664]';
               } else if (isLastMoveFrom || isLastMoveTo) {
                 squareBg = isLight ? 'bg-[#E3D19A]' : 'bg-[#9E774C]';
@@ -356,14 +712,33 @@ export const ChessBoardInner: React.FC<ChessBoardProps> = ({
               }
 
               return (
-                <button
+                <div
                   key={square}
-                  type="button"
                   onClick={() => handleSquareClick(square)}
-                  className={`relative flex items-center justify-center transition-colors duration-150 ${squareBg} cursor-pointer focus:outline-none`}
+                  onMouseDown={(e) => handleMouseDown(e, square)}
+                  onMouseUp={(e) => handleMouseUp(e, square)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, square)}
+                  className={`relative flex items-center justify-center transition-colors duration-100 ${squareBg} cursor-pointer focus:outline-none`}
                   title={`${square} ${piece ? `(${piece.color === 'w' ? 'White' : 'Black'} ${piece.type.toUpperCase()})` : ''}`}
                 >
-                  {/* File & Rank Coordinates on perimeter squares */}
+                  {/* Right-click highlight overlay (Lichess/Chess.com style) */}
+                  {isRightClickHighlighted && (
+                    <div className="absolute inset-0 bg-red-500/35 border-2 border-red-500 pointer-events-none" />
+                  )}
+
+                  {/* King Check Red Radial Aura */}
+                  {isKingChecked && (
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background:
+                          'radial-gradient(circle, rgba(239, 68, 68, 0.8) 0%, rgba(220, 38, 38, 0.4) 65%, transparent 100%)'
+                      }}
+                    />
+                  )}
+
+                  {/* Coordinates on perimeter squares */}
                   {fIdx === 0 && (
                     <span
                       className={`absolute top-0.5 left-1 text-[9px] font-mono select-none font-semibold ${
@@ -383,37 +758,134 @@ export const ChessBoardInner: React.FC<ChessBoardProps> = ({
                     </span>
                   )}
 
-                  {/* Homing Square Arc Visual (Brand Mark Motif) */}
+                  {/* Homing Square Arc Visual */}
                   {isHoming && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="w-3/4 h-3/4 rounded-full border border-[#1E3A2F]/40 animate-pulse" />
                     </div>
                   )}
 
-                  {/* Legal move destination indicator */}
+                  {/* Legal move destination indicator (Lichess/Chess.com style dot & ring) */}
                   {isLegal && !piece && (
-                    <span className="w-3 h-3 rounded-full bg-[#1E3A2F]/30 pointer-events-none" />
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#1E3A2F]/30 pointer-events-none shadow-xs" />
                   )}
                   {isLegal && piece && (
                     <span className="absolute inset-0 rounded-full border-4 border-[#1E3A2F]/40 pointer-events-none" />
                   )}
 
-                  {/* Chess Piece */}
+                  {/* Chess Piece with Draggable Support */}
                   {showPiece && (
-                    <div className="w-[84%] h-[84%] flex items-center justify-center transition-transform hover:scale-105">
+                    <div
+                      draggable={interactive && piece.color === chess.turn()}
+                      onDragStart={(e) => handleDragStart(e, square)}
+                      className={`w-[86%] h-[86%] flex items-center justify-center transition-transform ${
+                        interactive && piece.color === chess.turn()
+                          ? 'cursor-grab active:cursor-grabbing hover:scale-105'
+                          : 'cursor-pointer'
+                      } ${draggedSquare === square ? 'opacity-40 scale-95' : 'opacity-100'}`}
+                    >
                       {renderPieceSvg(piece.type, piece.color)}
                     </div>
                   )}
-                </button>
+                </div>
               );
             })
+          )}
+
+          {/* SVG Overlay for Right-Click Arrows (Lichess/Chess.com style) */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
+            <defs>
+              <marker
+                id="arrowhead-gold"
+                markerWidth="6"
+                markerHeight="6"
+                refX="4"
+                refY="3"
+                orient="auto"
+              >
+                <polygon points="0 0, 6 3, 0 6" fill="#C6A664" />
+              </marker>
+              <marker
+                id="arrowhead-red"
+                markerWidth="6"
+                markerHeight="6"
+                refX="4"
+                refY="3"
+                orient="auto"
+              >
+                <polygon points="0 0, 6 3, 0 6" fill="#EF4444" />
+              </marker>
+            </defs>
+            {arrows.map((arr, i) => {
+              const start = getSquareCoordinates(arr.from);
+              const end = getSquareCoordinates(arr.to);
+              return (
+                <line
+                  key={i}
+                  x1={`${start.x}%`}
+                  y1={`${start.y}%`}
+                  x2={`${end.x}%`}
+                  y2={`${end.y}%`}
+                  stroke="#C6A664"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  opacity="0.85"
+                  markerEnd="url(#arrowhead-gold)"
+                />
+              );
+            })}
+          </svg>
+
+          {/* Pawn Promotion Modal (Lichess/Chess.com style) */}
+          {pendingPromotion && (
+            <div className="absolute inset-0 bg-black/50 z-30 flex items-center justify-center backdrop-blur-xs animate-fadeIn">
+              <div className="bg-[#FAF7F2] p-3 rounded-2xl border-2 border-[#C6A664] shadow-2xl flex flex-col items-center gap-2">
+                <span className="text-xs font-mono font-bold text-[#1E3A2F] uppercase tracking-wider">
+                  Promote Pawn to
+                </span>
+                <div className="flex items-center gap-2">
+                  {(['q', 'n', 'r', 'b'] as const).map((pieceType) => (
+                    <button
+                      key={pieceType}
+                      type="button"
+                      onClick={() => executeMove(pendingPromotion.from, pendingPromotion.to, pieceType)}
+                      className="w-12 h-12 rounded-xl bg-white border border-[#D9CFC0] hover:border-[#1E3A2F] hover:bg-[#EDE6D8] transition-all p-1 flex items-center justify-center shadow-xs hover:scale-110 cursor-pointer"
+                      title={pieceType === 'q' ? 'Queen' : pieceType === 'n' ? 'Knight' : pieceType === 'r' ? 'Rook' : 'Bishop'}
+                    >
+                      {renderPieceSvg(pieceType, pendingPromotion.color)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
 
+      {/* Bottom Bar: Player Captured Pieces & Advantage */}
+      {showCapturedPieces && size !== 'sm' && (
+        <div className="w-full flex items-center justify-between px-2 py-1 text-xs text-[#595959] font-mono mt-1">
+          <div className="flex items-center gap-1 min-h-5 flex-wrap">
+            {bottomCaptured.map((p, i) => (
+              <span key={i} className="w-4 h-4 inline-flex items-center justify-center opacity-85">
+                {renderPieceSvg(p, flipped ? 'b' : 'w')}
+              </span>
+            ))}
+            {bottomAdvantage > 0 && (
+              <span className="text-[10px] font-bold text-[#1E3A2F] bg-[#FAF7F2] px-1 rounded border border-[#D9CFC0]">
+                +{bottomAdvantage}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] text-[#8C7A6B] italic hidden sm:inline">
+            Right-click to highlight & drag arrows
+          </span>
+        </div>
+      )}
+
       {/* Pawn Skeleton Mode Banner */}
       {pawnSkeletonOnly && (
-        <div className="mt-2 text-xs text-[#595959] italic flex items-center gap-1.5 font-sans">
+        <div className="mt-1.5 text-xs text-[#595959] italic flex items-center gap-1.5 font-sans">
           <span>Pawn Skeleton Filter Active (Pieces hidden to reveal the terrain)</span>
         </div>
       )}
@@ -429,4 +901,3 @@ export const ChessBoard: React.FC<ChessBoardProps> = (props) => {
     </ChessErrorBoundary>
   );
 };
-export { ChessErrorBoundary };

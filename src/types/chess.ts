@@ -34,18 +34,29 @@ export interface UnitCheckpoint {
   takeaway: string;
 }
 
+export interface VisualPlacementInfo {
+  concept: string;
+  description: string;
+  plannedAsset: string;
+  assetStatus: 'INSERTED' | 'PLACEHOLDER' | 'BLOCKED';
+  assetPath?: string;
+  sourceUrl?: string;
+  license?: string;
+  attribution?: string;
+}
+
 export interface CurriculumUnit {
   id: string;
   chapterId: string;
-  chapterNumber: number | 'P';
-  unitCode: string; // e.g. "P1", "1.1", "4.3", "8.2"
+  chapterNumber: number | 'P' | 'App' | string;
+  unitCode: string; // e.g. "P1", "1.1", "4.3", "8.2", "App.1"
   title: string;
   subtitle?: string;
   isNew?: boolean;
   isRevised?: boolean;
   isExpanded?: boolean;
   whatToLearn: string;
-  whatToExpect: string;
+  whatToExpect?: string;
   expectedOutcome: string;
   summary: string;
   contentParagraphs: string[];
@@ -53,11 +64,25 @@ export interface CurriculumUnit {
   initialFen: string;
   modelMoves?: string[];
   checkpoint: UnitCheckpoint;
+  workedExample?: {
+    title: string;
+    fen: string;
+    moves?: string[];
+    explanation: string;
+  };
+  practicalExercise?: {
+    title: string;
+    task: string;
+    fen?: string;
+    solution: string;
+  };
+  reflectionPrompt?: string;
+  visualPlacement?: VisualPlacementInfo;
 }
 
 export interface CurriculumChapter {
   id: string;
-  number: number | 'P';
+  number: number | 'P' | 'App' | string;
   code: string;
   title: string;
   subtitle: string;

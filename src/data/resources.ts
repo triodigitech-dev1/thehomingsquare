@@ -18,7 +18,7 @@ export const PLATFORM_RESOURCES: ResourceItem[] = [
     title: 'Board Geometry & Piece Placement — 2D Reference',
     description: 'Open chessboard reference image for the prerequisite chapter: board orientation, square geometry, piece placement, files, ranks, and visual scanning.',
     format: 'Image',
-    imagePath: '/assets/chessbook/images/2d.png',
+    imagePath: '/assets/chessbook/images/chessground-2d.png',
     aspectRatio: '1:1'
   },
   {
@@ -27,7 +27,7 @@ export const PLATFORM_RESOURCES: ResourceItem[] = [
     title: 'Board Geometry & Spatial Vision — 3D Reference',
     description: 'Open chessboard reference image for Chapter 1 spatial intelligence and Chapter 2 visual board perception.',
     format: 'Image',
-    imagePath: '/assets/chessbook/images/3d.png',
+    imagePath: '/assets/chessbook/images/chessground-3d.png',
     aspectRatio: '1:1'
   },
   {

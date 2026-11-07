@@ -133,10 +133,10 @@ export const MapView: React.FC<MapViewProps> = ({
           <div className="border-b border-[#D9CFC0]/60 pb-3 flex items-center justify-between">
             <span className="text-xs font-mono uppercase text-[#C6A664] tracking-wider font-semibold flex items-center gap-1.5">
               <Compass className="w-3.5 h-3.5" />
-              <span>Regions Syllabus</span>
+              <span>Syllabus Chapters</span>
             </span>
             <span className="text-xs text-[#595959] font-mono">
-              9 Regions
+              {CURRICULUM_CHAPTERS.length} Chapters & Appendix
             </span>
           </div>
 
@@ -161,7 +161,7 @@ export const MapView: React.FC<MapViewProps> = ({
                 >
                   <div className="flex items-center justify-between text-[11px] font-mono mb-1">
                     <span className={isSelected ? 'text-[#C6A664]' : 'text-[#8C7A6B]'}>
-                      Region {ch.number === 'P' ? '0 · Intro' : `0${ch.number}`}
+                      {ch.number === 'P' ? 'Prerequisite' : ch.number === 'App' ? 'Appendix' : `Chapter 0${ch.number}`}
                     </span>
                     <span className={isSelected ? 'text-[#D9CFC0]' : 'text-[#595959]'}>
                       {chapterDoneCount}/{ch.units.length}
@@ -195,7 +195,7 @@ export const MapView: React.FC<MapViewProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono uppercase tracking-wider text-[#C6A664] font-semibold flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5" />
-                <span>Region {selectedChapter.number === 'P' ? '0 · Prerequisite' : `0${selectedChapter.number}`} · Landmark Stage</span>
+                <span>{selectedChapter.number === 'P' ? 'Prerequisite' : selectedChapter.number === 'App' ? 'Appendix' : `Chapter 0${selectedChapter.number}`} · Landmark Stage</span>
               </span>
               <span className="text-xs font-mono px-2 py-0.5 rounded bg-white border border-[#D9CFC0] text-[#1E3A2F] font-semibold">
                 {selectedChapter.units.filter((u) => progress.completedUnitIds.includes(u.id)).length} of {selectedChapter.units.length} Units Finished
